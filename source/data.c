@@ -25,8 +25,9 @@ struct data_t *data_create2(int size, void *data) {
     if (size <= 0 || data == NULL)
         return NULL;
 
-    struct data_t *new_data = data_create(size);
-    memcpy(new_data->data, data, size);
+    struct data_t *new_data = malloc(sizeof(struct data_t));
+    new_data->data = data;
+    new_data->datasize = size;
     return new_data;
 } 
 
@@ -55,7 +56,10 @@ struct data_t *data_dup(struct data_t *data) {
     if (data == NULL || data->datasize <= 0 || data->data == NULL) 
         return NULL;
     
-    return data_create2(data->datasize, data->data);
+    struct data_t *dup_data = data_create(data->datasize);
+    memcpy(dup_data->data, data->data, data->datasize);
+
+    return dup_data;
 }
 
 /* Função que substitui o conteúdo de um elemento de dados data_t.
