@@ -11,7 +11,7 @@ struct data_t *data_create(int size) {
     if (size <= 0) 
         return NULL;
     
-    struct data_t *new_data = (struct data_t*) malloc (sizeof(int) + size);
+    struct data_t *new_data = (struct data_t*) malloc (sizeof(struct data_t));
     new_data -> datasize = size;
     new_data -> data = malloc (size);
     return new_data;
@@ -25,9 +25,8 @@ struct data_t *data_create2(int size, void *data) {
     if (size <= 0 || data == NULL)
         return NULL;
 
-    struct data_t *new_data = (struct data_t*) malloc (sizeof(int) + size);
-    new_data -> datasize = size;
-    new_data -> data = data;
+    struct data_t *new_data = data_create(size);
+    memcpy(new_data->data, data, size);
     return new_data;
 } 
 
@@ -38,10 +37,12 @@ void data_destroy(struct data_t *data) {
     if (data == NULL)
         return;
     
-    if (data->data == NULL) { 
+
+    //acho que nunca é nulo
+    /* if (data->data == NULL) { 
         free (data);
         return;
-    }
+    } */
 
     free (data -> data);
     free (data);
@@ -54,11 +55,7 @@ struct data_t *data_dup(struct data_t *data) {
     if (data == NULL || data->datasize <= 0 || data->data == NULL) 
         return NULL;
     
-    struct data_t *new_data = (struct data_t*) malloc (sizeof(int) + data -> datasize);
-    new_data -> datasize = data -> datasize;
-    new_data -> data = malloc (data -> datasize);
-    memcpy (new_data -> data, data -> data, data -> datasize);
-    return new_data;
+    return data_create2(data->datasize, data->data);
 }
 
 /* Função que substitui o conteúdo de um elemento de dados data_t.
