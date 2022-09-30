@@ -13,7 +13,7 @@ struct data_t *data_create(int size) {
     
     struct data_t *new_data = (struct data_t*) malloc (sizeof(struct data_t));
     new_data -> datasize = size;
-    new_data -> data = malloc (size);
+    new_data -> data = (void *) malloc (size);
     return new_data;
 }
 
@@ -25,7 +25,7 @@ struct data_t *data_create2(int size, void *data) {
     if (size <= 0 || data == NULL)
         return NULL;
 
-    struct data_t *new_data = malloc(sizeof(struct data_t));
+    struct data_t *new_data = (struct data_t*) malloc(sizeof(struct data_t));
     new_data->data = data;
     new_data->datasize = size;
     return new_data;
