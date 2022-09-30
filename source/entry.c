@@ -31,7 +31,10 @@ void entry_destroy(struct entry_t *entry) {
  * nova estrutura.
  */
 struct entry_t *entry_dup(struct entry_t *entry) {
-    return entry_create (entry -> key, entry -> value);
+    char* new_key = strdup (entry -> key);
+    struct data_t *new_data = data_dup (entry -> value);
+    struct entry_t *new_entry = entry_create (new_key, new_data);
+    return new_entry;
 }
 
 /* Função que substitui o conteúdo de uma entrada entry_t.
@@ -39,7 +42,9 @@ struct entry_t *entry_dup(struct entry_t *entry) {
 */
 void entry_replace(struct entry_t *entry, char *new_key, struct data_t *new_value) {
     entry -> key = new_key;
-    data_replace (entry -> value, new_value -> datasize, new_value -> data);
+    entry -> value = new_value;
+    //NAO PASSA NOS TESTES DA STORA
+    //data_replace (entry -> value, new_value -> datasize, new_value -> data);
 }
 
 /* Função que compara duas entradas e retorna a ordem das mesmas.
