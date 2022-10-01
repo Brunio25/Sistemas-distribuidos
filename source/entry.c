@@ -45,6 +45,7 @@ void entry_replace(struct entry_t *entry, char *new_key, struct data_t *new_valu
     entry->value = new_value;
     // NAO PASSA NOS TESTES DA STORA
     // data_replace (entry -> value, new_value -> datasize, new_value -> data);
+    // memory leak?????
 }
 
 /* Função que compara duas entradas e retorna a ordem das mesmas.
