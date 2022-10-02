@@ -1,4 +1,4 @@
-#include "../include/entry.h"
+#include "../include/entry.h" 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,11 +42,11 @@ struct entry_t *entry_dup(struct entry_t *entry) {
  *  Deve assegurar que destroi o conteúdo antigo da mesma.
  */
 void entry_replace(struct entry_t *entry, char *new_key, struct data_t *new_value) {
+    data_destroy(entry->value);
+    free(entry->key);
+
     entry->key = new_key;
     entry->value = new_value;
-    // NAO PASSA NOS TESTES DA STORA
-    // data_replace (entry -> value, new_value -> datasize, new_value -> data);
-    // memory leak?????
 }
 
 /* Função que compara duas entradas e retorna a ordem das mesmas.

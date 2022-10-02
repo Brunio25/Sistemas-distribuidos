@@ -37,10 +37,9 @@ struct data_t *data_create2(int size, void *data) {
 void data_destroy(struct data_t *data) {
     if (data == NULL)
         return;
-    
 
     //acho que nunca é nulo
-    /* if (data->data == NULL) { 
+    /* if (data->data == NULL) {
         free (data);
         return;
     } */

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/param.h>
 
 #include "../include/tree-private.h"
 
@@ -10,9 +11,13 @@
  */
 struct tree_t *tree_create() {
     struct tree_t *new_tree = (struct tree_t *)malloc(sizeof(struct tree_t));
-    new_tree->root = NULL;
-    new_tree->left = NULL;
-    new_tree->right = NULL;
+
+    if (new_tree != NULL) {
+        new_tree->root = NULL;
+        new_tree->left = NULL;
+        new_tree->right = NULL;
+    }
+    
     return new_tree;
 }
 
@@ -26,7 +31,7 @@ void tree_destroy(struct tree_t *tree) {
     tree_destroy(tree->left);
     tree_destroy(tree->right);
 
-    entry_destroy(tree->root);
+    //entry_destroy(tree->root);
 }
 
 /* Função para adicionar um par chave-valor à árvore.
@@ -103,12 +108,14 @@ struct data_t *tree_get(struct tree_t *tree, char *key) {
  * libertando toda a memória alocada na respetiva operação tree_put.
  * Retorna 0 (ok) ou -1 (key not found).
  */
-int tree_del(struct tree_t *tree, char *key);  // TODO
+int tree_del(struct tree_t *tree, char *key){
+    return 0;
+}  // TODO
 
 /* Função que devolve o número de elementos contidos na árvore.
  */
 int tree_size(struct tree_t *tree) {
-    if (tree == NULL) {
+    if (tree == NULL || tree->root == NULL) {
         return 0;
     }
 
@@ -117,31 +124,69 @@ int tree_size(struct tree_t *tree) {
 
 /* Função que devolve a altura da árvore.
  */
-int tree_height(struct tree_t *tree) {
+/*int tree_height(struct tree_t *tree) {
     if (tree == NULL || tree->root == NULL) {
         return 0;
     }
 
     return 1 + max(tree_height(tree->left), tree_height(tree->right));
-}
+}*/
 
 /* Função que devolve um array de char* com a cópia de todas as keys da
  * árvore, colocando o último elemento do array com o valor NULL e
  * reservando toda a memória necessária. As keys devem vir ordenadas segundo a ordenação
  * lexicográfica das mesmas.
  */
-char **tree_get_keys(struct tree_t *tree);
+char **tree_get_keys(struct tree_t *tree) {
+    if (tree == NULL) {
+        return NULL;
+    }
+
+    int size = tree_size(tree);
+    char **keys = (char **)malloc((size + 1) * sizeof(char *));
+
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    int i = 0;
+    tree_get_keys_aux(tree, keys, &i);
+
+    keys[size] = NULL;
+
+    return keys;
+    
+}
+
+void tree_get_keys_aux(struct tree_t *tree, char **keys, int *i) {
+    if (tree == NULL) {
+        return;
+    }
+
+    tree_get_keys_aux(tree->left, keys, i);
+
+    keys[*i] = strdup(tree->root->key);
+    (*i)++;
+
+    tree_get_keys_aux(tree->right, keys, i);
+}
 
 /* Função que devolve um array de void* com a cópia de todas os values da
  * árvore, colocando o último elemento do array com o valor NULL e
  * reservando toda a memória necessária.
  */
-void **tree_get_values(struct tree_t *tree);
+void **tree_get_values(struct tree_t *tree) {
+    return;
+}
 
 /* Função que liberta toda a memória alocada por tree_get_keys().
  */
-void tree_free_keys(char **keys);
+void tree_free_keys(char **keys) {
+    return;
+}
 
 /* Função que liberta toda a memória alocada por tree_get_values().
  */
-void tree_free_values(void **values);
+void tree_free_values(void **values) {
+    return;
+}
