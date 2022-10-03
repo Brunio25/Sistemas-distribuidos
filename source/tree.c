@@ -31,7 +31,11 @@ void tree_destroy(struct tree_t *tree) {
     tree_destroy(tree->left);
     tree_destroy(tree->right);
 
+
+    //É preciso destruir as entrys mas ainda n consegui
+    //por a funcionar bem
     //entry_destroy(tree->root);
+    free(tree);
 }
 
 /* Função para adicionar um par chave-valor à árvore.
@@ -48,7 +52,7 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
     }
 
     if (tree->root == NULL) {
-        tree->root = entry_create(key, value);
+        tree->root = entry_create(key,value);
         return 0;
     }
 
@@ -94,7 +98,7 @@ struct data_t *tree_get(struct tree_t *tree, char *key) {
     int cmp = strcmp(key, tree->root->key);
 
     if (cmp == 0) {
-        return entry_dup(tree->root);
+        return data_dup(tree->root->value);
     }
 
     if (cmp < 0) {
