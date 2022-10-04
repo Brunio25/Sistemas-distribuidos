@@ -35,24 +35,23 @@ struct data_t *data_create2(int size, void *data) {
  * libertando toda a memória por ele ocupada.
  */
 void data_destroy(struct data_t *data) {
-    if (data == NULL)
-        return;
+    if (data == NULL) return;
 
     //acho que nunca é nulo
-    /* if (data->data == NULL) {
-        free (data);
+    if (data->data == NULL) {
+        free(data);
         return;
-    } */
+    }
 
-    free (data -> data);
-    free (data);
+    free(data->data);
+    free(data);
 }
 
 /* Função que duplica uma estrutura data_t, reservando toda a memória
  * necessária para a nova estrutura, inclusivamente dados.
  */
 struct data_t *data_dup(struct data_t *data) {
-    if (data == NULL || data->datasize <= 0 || data->data == NULL) 
+    if (data == NULL || data->datasize <= 0 || data->data == NULL)
         return NULL;
     
     struct data_t *dup_data = data_create(data->datasize);

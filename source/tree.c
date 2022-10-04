@@ -34,7 +34,10 @@ void tree_destroy(struct tree_t *tree) {
 
     //É preciso destruir as entrys mas ainda n consegui
     //por a funcionar bem
-    //entry_destroy(tree->root);
+    if (tree->root != NULL) {
+       entry_destroy(tree->root);
+    }
+    
     free(tree);
 }
 
@@ -53,13 +56,17 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
 
     if (tree->root == NULL) {
         tree->root = entry_create(key,value);
+        printf("primeiro -> key1: %s, key2: %s\n", key, tree->root->key);
         return 0;
     }
 
     int cmp = strcmp(key, tree->root->key);
-
+    
     if (cmp == 0) {
-        entry_replace(tree->root, key, value);
+        printf("key1: %s, key2: %s\n", key, tree->root->key);
+        printf(" cheguei\n");
+        data_destroy(tree->root->value);
+        tree->root->value = data_dup(value);
         return 0;
     }
 
@@ -112,9 +119,57 @@ struct data_t *tree_get(struct tree_t *tree, char *key) {
  * libertando toda a memória alocada na respetiva operação tree_put.
  * Retorna 0 (ok) ou -1 (key not found).
  */
-int tree_del(struct tree_t *tree, char *key){
-    return 0;
-}  // TODO
+int tree_del(struct tree_t *tree, char *key) {
+    if (tree == NULL) {
+        return -1;
+    }
+
+    int cmp = strcmp(key, tree->root->key);
+
+    if (cmp < 0) {
+        tree_del(tree->left, key);
+    }
+    else if (cmp > 0) {
+        tree_del(tree->left, key);
+    }
+    else {
+        //No Children
+        if (tree->left == NULL && tree->right == NULL) {
+            tree_destroy(tree);
+        }
+        else if(tree->left == NULL || tree->right == NULL) {
+            //One Child
+            struct tree * temp;
+            if (tree->left == NULL) {
+                temp = tree->right;
+                tree->right = NULL;
+            }
+            else {
+                temp = tree->left;
+                tree->left = NULL;
+            }
+            entry_destroy(tree->root);
+            tree->root = temp;
+        }
+        else {
+            //Two Children
+            struct tree_t *temp = minValue(tree->right);
+            tree->root = temp->root;
+            tree->right = tree_del(tree->right, temp->root->key);
+        }
+
+        return 0;
+    }
+  
+} 
+
+struct tree_t* minValue(struct tree_t *tree) {
+    if(tree == NULL)
+        return NULL;
+    else if(tree->left != NULL) 
+        return minValue(tree->left);
+    return tree;
+}
 
 /* Função que devolve o número de elementos contidos na árvore.
  */
