@@ -31,6 +31,7 @@ void tree_destroy(struct tree_t *tree) {
     tree_destroy(tree->left);
     tree_destroy(tree->right);
 
+
     entry_destroy(tree->root);
     free(tree);
 }
@@ -125,7 +126,7 @@ int tree_del(struct tree_t *tree, char *key) {
     return -1;
 }
 
-struct tree_t *tree_del_aux(struct tree_t *tree, char *key){
+struct tree_t *tree_del_aux(struct tree_t *tree, char *key) {
     if (tree == NULL) return NULL;
 
     int cmp = strcmp(key, tree->root->key);
@@ -153,13 +154,14 @@ struct tree_t *tree_del_aux(struct tree_t *tree, char *key){
                 temp = tree;
                 tree = tree->left;
             }
-            tree_destroy(tree);
+            free(temp);
         }
         else {
-            //Two Children 
+            //Two Children
             struct tree_t *temp = minValue(tree->right);
+            entry_destroy(tree->root);
             tree->root = temp->root;
-            tree->right = tree_del_aux(tree->right, temp->root->key);
+            tree->right = tree_del_aux(tree->right, tree->root->key);
         }
     }
     return tree;

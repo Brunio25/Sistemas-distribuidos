@@ -129,13 +129,11 @@ int testDelInexistente() {
 		key = (char*)malloc(16*sizeof(char));
 		sprintf(key,"a/key/b-%d",i);
 		data = data_create2(strlen(key)+1,key);
-		printf("%d; key: %s\n", i, key);
 
 		tree_put(tree,key,data);
 
 		data_destroy(data);
 	}
-	printf("cheguei\n");
 
 	assert(tree_size(tree) == 1024);
 	result = (tree_size(tree) == 1024);
@@ -250,11 +248,11 @@ int main() {
 
 	score += testPutExistente();
 
-	//score += testDelInexistente();
+	score += testDelInexistente();
 
-	/* score += testDelExistente();
+	score += testDelExistente();
 
-	score += testGetKeys(); */
+	//score += testGetKeys();
 	
 	//aqui tmb pode ser adicionado um teste para o método tree_get_values
 
