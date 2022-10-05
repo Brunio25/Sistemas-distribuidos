@@ -10,4 +10,6 @@ struct tree_t {
     struct tree_t *right;
 };
 
+struct tree_t* minValue(struct tree_t *tree);
+
 #endif

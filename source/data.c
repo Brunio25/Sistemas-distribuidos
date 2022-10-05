@@ -40,11 +40,14 @@ void data_destroy(struct data_t *data) {
     //acho que nunca é nulo
     if (data->data == NULL) {
         free(data);
+        data = NULL;
         return;
     }
 
     free(data->data);
+    data->data = NULL;
     free(data);
+    data = NULL;
 }
 
 /* Função que duplica uma estrutura data_t, reservando toda a memória

@@ -24,8 +24,11 @@ void entry_destroy(struct entry_t *entry) {
     if (entry == NULL) return;
 
     free(entry->key);
+    entry->key = NULL;
     data_destroy(entry->value);
+    entry->value = NULL;
     free(entry);
+    entry = NULL;
 }
 
 /* Função que duplica uma entry, reservando a memória necessária para a
