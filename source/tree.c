@@ -51,7 +51,7 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
 
     temp = entry_create(key, value);
     if (tree->root == NULL) {
-        // tree->root = entry_create(key,value);
+        //tree->root = entry_create(key,value);
         tree->root = entry_dup(temp);
         free(temp);
         return 0;
@@ -116,49 +116,55 @@ struct data_t *tree_get(struct tree_t *tree, char *key) {
  * libertando toda a memória alocada na respetiva operação tree_put.
  * Retorna 0 (ok) ou -1 (key not found).
  */
+
 int tree_del(struct tree_t *tree, char *key) {
-    if (tree == NULL) {
-        return -1;
-    }
+    int size = tree_size(tree);
+    tree_del_aux(tree, key);
+    if(tree_size(tree) < size)return 0;
+
+    return -1;
+}
+
+struct tree_t *tree_del_aux(struct tree_t *tree, char *key){
+    if (tree == NULL) return NULL;
 
     int cmp = strcmp(key, tree->root->key);
 
     if (cmp < 0) {
-        tree_del(tree->left, key);
+        tree->left = tree_del_aux(tree->left, key);
     }
     else if (cmp > 0) {
-        tree_del(tree->left, key);
+        tree->right = tree_del_aux(tree->right, key);
     }
     else {
         //No Children
         if (tree->left == NULL && tree->right == NULL) {
             tree_destroy(tree);
+            return NULL;
         }
         else if(tree->left == NULL || tree->right == NULL) {
             //One Child
-            struct tree * temp;
+            struct tree_t * temp;
             if (tree->left == NULL) {
-                temp = tree->right;
-                tree->right = NULL;
+                temp = tree;
+                tree = tree->right;
             }
             else {
-                temp = tree->left;
-                tree->left = NULL;
+                temp = tree;
+                tree = tree->left;
             }
-            entry_destroy(tree->root);
-            tree->root = temp;
+            tree_destroy(tree);
         }
         else {
-            //Two Children
+            //Two Children 
             struct tree_t *temp = minValue(tree->right);
             tree->root = temp->root;
-            tree->right = tree_del(tree->right, temp->root->key);
+            tree->right = tree_del_aux(tree->right, temp->root->key);
         }
-
-        return 0;
     }
-  
-} 
+    return tree;
+}
+
 
 struct tree_t* minValue(struct tree_t *tree) {
     if(tree == NULL)

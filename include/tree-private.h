@@ -12,4 +12,5 @@ struct tree_t {
 
 struct tree_t* minValue(struct tree_t *tree);
 
+struct tree_t *tree_del_aux(struct tree_t *tree, char *key);
 #endif
