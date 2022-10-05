@@ -30,19 +30,9 @@ void tree_destroy(struct tree_t *tree) {
 
     tree_destroy(tree->left);
     tree_destroy(tree->right);
-    if(tree->root != NULL){
-        if(tree->root->value != NULL){
-        //printf("merdsa: %p\n",tree->root->value->data);
-        //data_destroy(tree->root->value);
-        }
-        free(tree->root);
-        tree->root = NULL;
-    }
-    
 
-    
+    entry_destroy(tree->root);
     free(tree);
-    tree = NULL;
 }
 
 /* Função para adicionar um par chave-valor à árvore.
@@ -54,16 +44,22 @@ void tree_destroy(struct tree_t *tree) {
  * Retorna 0 (ok) ou -1 em caso de erro.
  */
 int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
+    struct entry_t * temp;
     if (tree == NULL) {
         return -1;
     }
 
+    temp = entry_create(key, value);
     if (tree->root == NULL) {
-        tree->root = entry_create(key,value);
+        // tree->root = entry_create(key,value);
+        tree->root = entry_dup(temp);
+        free(temp);
         return 0;
     }
 
-    int cmp = strcmp(key, tree->root->key);
+    //printf("key: %s, treeKey: %s\n", key, tree->root->key);
+    int cmp = entry_compare(temp, tree->root);
+    free(temp);
     
     if (cmp == 0) {
         data_destroy(tree->root->value);
