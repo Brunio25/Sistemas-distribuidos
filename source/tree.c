@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/param.h>
+#include <string.h>
 
 #include "../include/tree-private.h"
 
@@ -52,13 +53,11 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
 
     temp = entry_create(key, value);
     if (tree->root == NULL) {
-        //tree->root = entry_create(key,value);
         tree->root = entry_dup(temp);
         free(temp);
         return 0;
     }
 
-    //printf("key: %s, treeKey: %s\n", key, tree->root->key);
     int cmp = entry_compare(temp, tree->root);
     free(temp);
     
@@ -235,22 +234,63 @@ void tree_get_keys_aux(struct tree_t *tree, char **keys, int *i) {
     tree_get_keys_aux(tree->right, keys, i);
 }
 
-/* Função que devolve um array de void* com a cópia de todas os values da
+/* Função que devolve um array de void* com a cópia de todas os values da tree_get_keys_aux
  * árvore, colocando o último elemento do array com o valor NULL e
  * reservando toda a memória necessária.
  */
 void **tree_get_values(struct tree_t *tree) {
-    return;
+    if (tree == NULL) {
+        return NULL;
+    }
+
+    int size = tree_size(tree);
+    char **values = (char **)malloc((size + 1) * sizeof(char *));
+
+    if (values == NULL) {
+        return NULL;
+    }
+
+    int i = 0;
+    tree_get_values_aux(tree, values, &i);
+
+    values[size] = NULL;
+
+    return values;
+}
+
+void tree_get_values_aux(struct tree_t *tree, char **values, int *i) {
+    if (tree == NULL) {
+        return;
+    }
+
+    tree_get_values_aux(tree->left, values, i);
+
+    values[*i] = strdup(tree->root->value->data);
+    (*i)++;
+
+    tree_get_values_aux(tree->right, values, i);
 }
 
 /* Função que liberta toda a memória alocada por tree_get_keys().
  */
 void tree_free_keys(char **keys) {
-    return;
+    int i = 0;
+    while (keys[i] != NULL) {
+        free(keys[i]);
+        i++;
+    }
+
+    free(keys);
 }
 
 /* Função que liberta toda a memória alocada por tree_get_values().
  */
 void tree_free_values(void **values) {
-    return;
+    int i = 0;
+    while (values[i] != NULL) {
+        free(values[i]);
+        i++;
+    }
+
+    free(values);
 }
