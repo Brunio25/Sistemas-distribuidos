@@ -2,8 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/param.h>
 #include <string.h>
+#include <sys/param.h>
 
 #include "../include/tree-private.h"
 
@@ -18,7 +18,7 @@ struct tree_t *tree_create() {
         new_tree->left = NULL;
         new_tree->right = NULL;
     }
-    
+
     return new_tree;
 }
 
@@ -31,7 +31,6 @@ void tree_destroy(struct tree_t *tree) {
 
     tree_destroy(tree->left);
     tree_destroy(tree->right);
-
 
     entry_destroy(tree->root);
     free(tree);
@@ -46,7 +45,7 @@ void tree_destroy(struct tree_t *tree) {
  * Retorna 0 (ok) ou -1 em caso de erro.
  */
 int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
-    struct entry_t * temp;
+    struct entry_t *temp;
     if (tree == NULL) {
         return -1;
     }
@@ -60,7 +59,7 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
 
     int cmp = entry_compare(temp, tree->root);
     free(temp);
-    
+
     if (cmp == 0) {
         data_destroy(tree->root->value);
         tree->root->value = data_dup(value);
@@ -120,7 +119,7 @@ struct data_t *tree_get(struct tree_t *tree, char *key) {
 int tree_del(struct tree_t *tree, char *key) {
     int size = tree_size(tree);
     tree_del_aux(tree, key);
-    if(tree_size(tree) < size)return 0;
+    if (tree_size(tree) < size) return 0;
 
     return -1;
 }
@@ -132,31 +131,26 @@ struct tree_t *tree_del_aux(struct tree_t *tree, char *key) {
 
     if (cmp < 0) {
         tree->left = tree_del_aux(tree->left, key);
-    }
-    else if (cmp > 0) {
+    } else if (cmp > 0) {
         tree->right = tree_del_aux(tree->right, key);
-    }
-    else {
-        //No Children
+    } else {
+        // No Children
         if (tree->left == NULL && tree->right == NULL) {
             tree_destroy(tree);
             return NULL;
-        }
-        else if(tree->left == NULL || tree->right == NULL) {
-            //One Child
-            struct tree_t * temp;
+        } else if (tree->left == NULL || tree->right == NULL) {
+            // One Child
+            struct tree_t *temp;
             if (tree->left == NULL) {
                 temp = tree;
                 tree = tree->right;
-            }
-            else {
+            } else {
                 temp = tree;
                 tree = tree->left;
             }
             free(temp);
-        }
-        else {
-            //Two Children
+        } else {
+            // Two Children
             struct tree_t *temp = minValue(tree->right);
             entry_destroy(tree->root);
             tree->root = temp->root;
@@ -166,11 +160,10 @@ struct tree_t *tree_del_aux(struct tree_t *tree, char *key) {
     return tree;
 }
 
-
-struct tree_t* minValue(struct tree_t *tree) {
-    if(tree == NULL)
+struct tree_t *minValue(struct tree_t *tree) {
+    if (tree == NULL)
         return NULL;
-    else if(tree->left != NULL) 
+    else if (tree->left != NULL)
         return minValue(tree->left);
     return tree;
 }
@@ -185,15 +178,19 @@ int tree_size(struct tree_t *tree) {
     return tree_size(tree->left) + 1 + tree_size(tree->right);
 }
 
+/* Função que retorna o maior inteiro
+ */
+int max(int a, int b) { return a < b ? b : a; }
+
 /* Função que devolve a altura da árvore.
  */
-/*int tree_height(struct tree_t *tree) {
+int tree_height(struct tree_t *tree) {
     if (tree == NULL || tree->root == NULL) {
         return 0;
     }
 
     return 1 + max(tree_height(tree->left), tree_height(tree->right));
-}*/
+}
 
 /* Função que devolve um array de char* com a cópia de todas as keys da
  * árvore, colocando o último elemento do array com o valor NULL e
@@ -218,7 +215,6 @@ char **tree_get_keys(struct tree_t *tree) {
     keys[size] = NULL;
 
     return keys;
-    
 }
 
 void tree_get_keys_aux(struct tree_t *tree, char **keys, int *i) {
