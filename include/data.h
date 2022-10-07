@@ -1,3 +1,8 @@
+// Grupo 4
+// Renato Custódio nº56320
+// Bruno Soares nº57100
+// Guilherme Marques nº55472
+
 #ifndef _DATA_H
 #define _DATA_H /* Módulo data */
 

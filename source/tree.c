@@ -1,3 +1,8 @@
+// Grupo 4
+// Renato Custódio nº56320
+// Bruno Soares nº57100
+// Guilherme Marques nº55472
+
 #include "../include/tree.h"
 
 #include <stdio.h>
@@ -64,7 +69,7 @@ int tree_put(struct tree_t *tree, char *key, struct data_t *value) {
         data_destroy(tree->root->value);
         tree->root->value = data_dup(value);
         return 0;
-    }
+    }   
 
     if (cmp < 0) {
         if (tree->left == NULL) {
@@ -251,7 +256,7 @@ void **tree_get_values(struct tree_t *tree) {
 
     values[size] = NULL;
 
-    return values;
+    return (void **) values;
 }
 
 void tree_get_values_aux(struct tree_t *tree, char **values, int *i) {
