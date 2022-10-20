@@ -1,17 +1,23 @@
-
 #include "../include/client_stub.h"
+#include "../include/client_stub-private.h"
+#include "../include/network_client.h"
 
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 
-/* Remote tree. A definir pelo grupo em client_stub-private.h
- */
-struct rtree_t;
 
 /* Função para estabelecer uma associação entre o cliente e o servidor, 
  * em que address_port é uma string no formato <hostname>:<port>.
  * Retorna NULL em caso de erro.
  */
 struct rtree_t *rtree_connect(const char *address_port) {
-    
+    struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
+    char * token = strtok(address_port, ":");
+    rtree->server.sin_port = htons(atoi(token[1])); // Porta TCP
+    network_connect(rtree);
+    return rtree;
 }
 
 /* Termina a associação entre o cliente e o servidor, fechando a 
