@@ -15,8 +15,20 @@
 struct rtree_t *rtree_connect(const char *address_port) {
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
     char * token = strtok(address_port, ":");
+
     rtree->server.sin_port = htons(atoi(token[1])); // Porta TCP
-    network_connect(rtree);
+
+    if (inet_pton(AF_INET, token[0], &rtree->server.sin_addr) < 1) { // Endereço IP
+        printf("Erro ao converter IP\n");
+        free(rtree);
+        return NULL; 
+    }
+    
+    if(network_connect(rtree) == -1){
+        free(rtree);
+        return NULL;
+    }
+
     return rtree;
 }
 
@@ -25,7 +37,8 @@ struct rtree_t *rtree_connect(const char *address_port) {
  * Retorna 0 se tudo correr bem e -1 em caso de erro.
  */
 int rtree_disconnect(struct rtree_t *rtree) {
-    
+    network_close(rtree);
+    free(rtree);
 }
 
 /* Função para adicionar um elemento na árvore.
