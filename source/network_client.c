@@ -1,10 +1,11 @@
-# // Grupo 4
-# // Renato Custódio nº56320
-# // Bruno Soares nº57100
-# // Guilherme Marques nº55472
+// Grupo 4
+// Renato Custódio nº56320
+// Bruno Soares nº57100
+// Guilherme Marques nº55472
 
 #include "../include/network_client.h"
 #include "../include/client_stub-private.h"
+#include "../include/message-private.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -53,13 +54,36 @@ int network_connect(struct rtree_t *rtree) {
  * - De-serializar a mensagem de resposta;
  * - Retornar a mensagem de-serializada ou NULL em caso de erro.
  */
-struct message_t *network_send_receive(struct rtree_t * rtree, struct message_t *msg) {
+struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT *msg) {
+    int sockfd = rtree->sockfd;
+    
+    unsigned len = message_t__get_packed_size(msg);
+    char *sendBuf = malloc(len);
+    if (sendBuf == NULL) {
+        perror("malloc error\n");
+        return NULL;
+    }
 
+    message_t__pack(msg, (uint8_t *)&sendBuf);
+    write_all(sockfd, sendBuf, len); //Possível memory leak msg
+    free(sendBuf);
+
+    uint8_t *recBuf = malloc(MAX_MSG + 1);
+    if (read(sockfd, recBuf, MAX_MSG) < 0) {
+        perror("Receaving error\n");
+        return NULL;
+    }
+
+    struct _MessageT *recMsg = message_t__unpack(NULL, MAX_MSG, recBuf);
+    free(recBuf);
+
+    return recMsg;
 }
 
 /* A função network_close() fecha a ligação estabelecida por
  * network_connect().
  */
-int network_close(struct rtree_t * rtree){
+int network_close(struct rtree_t * rtree) {
     close(rtree->sockfd);
+    return 0;
 }

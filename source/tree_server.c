@@ -10,8 +10,10 @@
 int main(int argc, char const *argv[])
 {
     int sockfd = network_server_init(1025);
-    //tree_skel_init();
+    tree_skel_init();
     network_main_loop(sockfd);
+    tree_skel_destroy();
+    network_server_close();
 
     return 0;
 }

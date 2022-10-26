@@ -4,7 +4,12 @@
 # // Guilherme Marques nº55472
 
 CC = gcc
-LD= ld
+
+PROTOC_DIR=/usr/
+CFLAGS = -Wall -g -O2 -I${PROTOC_DIR}include/
+LDFLAGS = ${PROTOC_DIR}lib/x86_64-linux-gnu/libprotobuf-c.a
+
+LD = ld
 INC_DIR = include
 OBJ_DIR = object
 BIN_DIR = binary
@@ -12,9 +17,9 @@ SRC_DIR = source
 LIB_DIR = lib
 
 
-tree-server = tree_server.o data.o entry.o tree.o network_server.o message.o #tree_skel.o sdmessage.pb-c.o 
+tree-server = tree_server.o data.o entry.o tree.o network_server.o message.o sdmessage.pb-c.o tree_skel.o 
 
-tree-client = tree_client.o data.o entry.o client_stub.o network_client.o message.o #sdmessage.pb-c.o
+tree-client = tree_client.o data.o entry.o client_stub.o network_client.o message.o sdmessage.pb-c.o
 
 client-lib = client_stub.o network_client.o data.o entry.o
 
@@ -31,10 +36,10 @@ client-lib.o: $(client-lib)
 			ld -r $(addprefix $(OBJ_DIR)/,$^) -o $(LIB_DIR)/$@
 
 tree-client: $(tree-client)
-	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -I/usr/local/include -L/usr/local/lib -lprotobuf-c -o $(BIN_DIR)/$@
+	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 tree-server: $(tree-server)
-	$(CC) $(addprefix $(OBJ_DIR)/,$^) -I/usr/local/include -L/usr/local/lib -lprotobuf-c -o $(BIN_DIR)/$@
+	$(CC) $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@  $(LDFLAGS)
 
 
 clean:

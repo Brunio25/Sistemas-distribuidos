@@ -23,7 +23,6 @@ struct tree_t *tree_create() {
         new_tree->left = NULL;
         new_tree->right = NULL;
     }
-
     return new_tree;
 }
 

@@ -26,6 +26,16 @@ message message_t
         }
         C_type c_type = 2;
 
-        bytes data = 3;
+        message Entry {
+                string key = 3;
+                bytes value = 5;
+        }
+
+        string key = 3;
+        bytes value = 5;
+        Entry entry = 6;
+        int32 result = 7;
+        repeated string keys = 8;
+        repeated string values = 9;
 
 };

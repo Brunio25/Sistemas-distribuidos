@@ -7,6 +7,8 @@
 
 #include <errno.h>
 #include <sys/socket.h>
+#include <stdio.h>
+#include <unistd.h>
 
 
 int write_all(int sock, char *buf, int len) {

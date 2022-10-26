@@ -1,7 +1,7 @@
 #ifndef _TREE_SKEL_H
 #define _TREE_SKEL_H
 
-// #include "sdmessage.pb-c.h"
+#include "sdmessage.pb-c.h"
 #include "tree.h"
 
 /* Inicia o skeleton da árvore.
@@ -19,6 +19,6 @@ void tree_skel_destroy();
  * e utiliza a mesma estrutura message_t para devolver o resultado.
  * Retorna 0 (OK) ou -1 (erro, por exemplo, árvore nao incializada)
 */
-int invoke(struct message_t *msg);
+int invoke(struct _MessageT *msg);
 
 #endif
