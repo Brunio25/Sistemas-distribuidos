@@ -1,4 +1,10 @@
+# // Grupo 4
+# // Renato Custódio nº56320
+# // Bruno Soares nº57100
+# // Guilherme Marques nº55472
+
 #include "../include/network_server.h"
+#include "../include/message-private.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -68,8 +74,10 @@ int network_main_loop(int listening_socket) {
  * - De-serializar estes bytes e construir a mensagem com o pedido,
  *   reservando a memória necessária para a estrutura message_t.
  */
-struct message_t *network_receive(int client_socket){
-    
+struct message_t *network_receive(int client_socket) {
+    char buf[MAX_MSG+1];
+    read_all(client_socket, buf, MAX_MSG);
+
 }
 
 /* Esta função deve:

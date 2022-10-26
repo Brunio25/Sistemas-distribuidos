@@ -11,9 +11,9 @@ BIN_DIR = binary
 SRC_DIR = source
 LIB_DIR = lib
 
-#tree-server
+
 tree-server = tree_server.o data.o entry.o tree.o network_server.o message.o #tree_skel.o sdmessage.pb-c.o 
-#tree-client
+
 tree-client = tree_client.o data.o entry.o client_stub.o network_client.o message.o #sdmessage.pb-c.o
 
 client-lib = client_stub.o network_client.o data.o entry.o
