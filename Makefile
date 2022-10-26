@@ -4,29 +4,41 @@
 # // Guilherme Marques nº55472
 
 CC = gcc
-CFLAGS = -g
+LD= ld
+INC_DIR = include
+OBJ_DIR = object
+BIN_DIR = binary
+SRC_DIR = source
+LIB_DIR = lib
 
-SRCDIR = source
-OBJDIR = object
-BINDIR = binary
-INCDIR = include
+#tree-server
+tree-server = tree_server.o data.o entry.o tree.o network_server.o message.o #tree_skel.o sdmessage.pb-c.o 
+#tree-client
+tree-client = tree_client.o data.o entry.o client_stub.o network_client.o message.o #sdmessage.pb-c.o
 
-SRC = $(wildcard $(SRCDIR)/*.c)
-OBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRC))
-BIN = $(BINDIR)/out
-INC = $(wildcard $(INCDIR)/*.h)
+client-lib = client_stub.o network_client.o data.o entry.o
 
+OBJETOS = client-lib.o tree-client.o tree-server.o
 
-all: $(BIN)
+CFLAGS = -g -Wall -I
 
-$(BIN): $(OBJ)
-	$(CC) $(CFLAGS) -o $(BIN) $(OBJ)
+all: client-lib.o tree-client tree-server
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c $(INC)
-	$(CC) $(CFLAGS) -c -o $@ $<
+%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(INC_DIR) -o $(OBJ_DIR)/$@ -c $<
 
-.PHONY: clean
+client-lib.o: $(client-lib)
+			ld -r $(addprefix $(OBJ_DIR)/,$^) -o $(LIB_DIR)/$@
+
+tree-client: $(tree-client)
+	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -I/usr/local/include -L/usr/local/lib -lprotobuf-c -o $(BIN_DIR)/$@
+
+tree-server: $(tree-server)
+	$(CC) $(addprefix $(OBJ_DIR)/,$^) -I/usr/local/include -L/usr/local/lib -lprotobuf-c -o $(BIN_DIR)/$@
+
 
 clean:
-	rm -f $(OBJDIR)/*.o *~ $(INCDIR)/*~ $(SRCDIR)/*~ $(BINDIR)/*
+	rm -f $(OBJ_DIR)/*.o
+	rm -f $(BIN_DIR)/*
+	rm -f $(LIB_DIR)/*
     

@@ -1,19 +1,21 @@
-#ifndef _TREE_SKEL_H
-#define _TREE_SKEL_H
+#include "../include/tree_skel.h"
 
-// #include "sdmessage.pb-c.h"
-#include "tree.h"
+#include <stdio.h>
 
 /* Inicia o skeleton da árvore.
  * O main() do servidor deve chamar esta função antes de poder usar a
  * função invoke(). 
  * Retorna 0 (OK) ou -1 (erro, por exemplo OUT OF MEMORY)
  */
-int tree_skel_init();
+int tree_skel_init(){
+    return 0;
+}
 
 /* Liberta toda a memória e recursos alocados pela função tree_skel_init.
  */
-void tree_skel_destroy();
+void tree_skel_destroy(){
+    return ;
+}
 
 /* Executa uma operação na árvore (indicada pelo opcode contido em msg)
  * e utiliza a mesma estrutura message_t para devolver o resultado.
@@ -21,4 +23,3 @@ void tree_skel_destroy();
 */
 int invoke(struct message_t *msg);
 
-#endif

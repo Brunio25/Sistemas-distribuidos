@@ -9,13 +9,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+int sockfd;
 /* Função para preparar uma socket de receção de pedidos de ligação
  * num determinado porto.
  * Retornar descritor do socket (OK) ou -1 (erro).
  */
 int network_server_init(short port) {
     struct sockaddr_in server;
-    int sockfd;
+    
     // Cria socket TCP
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         perror("Erro ao criar socket");
@@ -55,6 +56,9 @@ int network_main_loop(int listening_socket) {
     int connsockfd;
     while ((connsockfd = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
         printf("server recebeu conexao\n");
+        struct message_t *message = network_receive(connsockfd);
+        //espera resposta
+        network_send(connsockfd,message);
         close(connsockfd);
     }
 }
@@ -64,17 +68,22 @@ int network_main_loop(int listening_socket) {
  * - De-serializar estes bytes e construir a mensagem com o pedido,
  *   reservando a memória necessária para a estrutura message_t.
  */
-struct message_t *network_receive(int client_socket);
+struct message_t *network_receive(int client_socket){
+    
+}
 
 /* Esta função deve:
  * - Serializar a mensagem de resposta contida em msg;
  * - Libertar a memória ocupada por esta mensagem;
  * - Enviar a mensagem serializada, através do client_socket.
  */
-int network_send(int client_socket, struct message_t *msg);
+int network_send(int client_socket, struct message_t *msg){
+    
+}
 
 /* A função network_server_close() liberta os recursos alocados por
  * network_server_init().
  */
 int network_server_close(){
+    close(sockfd);
 }
