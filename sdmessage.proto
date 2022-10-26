@@ -1,6 +1,6 @@
 syntax = "proto3";
 message message_t
- {
+{
         enum Opcode {
                 OP_BAD     	= 0;
                 OP_SIZE    	= 10;

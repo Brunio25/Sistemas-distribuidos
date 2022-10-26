@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) a base da
  *   informação guardada na estrutura rtree;
@@ -24,18 +25,18 @@ int network_connect(struct rtree_t *rtree) {
         perror("Erro ao criar socket TCP");
         return -1;
     }
-
+    
     // Preenche estrutura server com endereço do servidor para estabelecer
     // conexão
     rtree->server.sin_family = AF_INET; // família de endereços
-    
+   
     // Estabelece conexão com o servidor definido na estrutura server
     if (connect(rtree->sockfd,(struct sockaddr *)&rtree->server, sizeof(rtree->server)) < 0) {
         perror("Erro ao conectar-se ao servidor");
         close(rtree->sockfd);
         return -1;
     }
-
+    
     return 0;
 }
 
@@ -47,7 +48,7 @@ int network_connect(struct rtree_t *rtree) {
  * - De-serializar a mensagem de resposta;
  * - Retornar a mensagem de-serializada ou NULL em caso de erro.
  */
-struct message_t *network_send_receive(struct rtree_t * rtree, struct message_t *msg){
+struct message_t *network_send_receive(struct rtree_t * rtree, struct message_t *msg) {
 
 }
 

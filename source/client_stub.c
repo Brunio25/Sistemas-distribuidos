@@ -13,12 +13,18 @@
  * Retorna NULL em caso de erro.
  */
 struct rtree_t *rtree_connect(const char *address_port) {
+    if(address_port == NULL){
+        printf("address_port é null");
+        return NULL;
+    }
+
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
-    char * token = strtok(address_port, ":");
+    char *token1 = strtok(address_port, ":");
+    char *token2 = strtok(NULL, ":");
 
-    rtree->server.sin_port = htons(atoi(token[1])); // Porta TCP
-
-    if (inet_pton(AF_INET, token[0], &rtree->server.sin_addr) < 1) { // Endereço IP
+    rtree->server.sin_port = htons(atoi(token2)); // Porta TCP
+    printf("%s   :   %s\n",token1,token2);
+    if (inet_pton(AF_INET, token1, &rtree->server.sin_addr) < 1) {   // Endereço IP
         printf("Erro ao converter IP\n");
         free(rtree);
         return NULL; 
@@ -28,7 +34,7 @@ struct rtree_t *rtree_connect(const char *address_port) {
         free(rtree);
         return NULL;
     }
-
+    
     return rtree;
 }
 

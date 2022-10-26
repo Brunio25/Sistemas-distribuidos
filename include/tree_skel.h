@@ -1,7 +1,7 @@
 #ifndef _TREE_SKEL_H
 #define _TREE_SKEL_H
 
-#include "sdmessage.pb-c.h"
+//#include "sdmessage.pb-c.h"
 #include "tree.h"
 
 /* Inicia o skeleton da árvore.
