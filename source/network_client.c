@@ -4,18 +4,19 @@
 // Guilherme Marques nº55472
 
 #include "../include/network_client.h"
-#include "../include/client_stub-private.h"
-#include "../include/message-private.h"
 
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "../include/client_stub-private.h"
+#include "../include/message-private.h"
 
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) a base da
@@ -26,24 +27,23 @@
  * - Retornar 0 (OK) ou -1 (erro).
  */
 int network_connect(struct rtree_t *rtree) {
-
     // Cria socket TCP
     if ((rtree->sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Erro ao criar socket TCP");
         return -1;
     }
-    
+
     // Preenche estrutura server com endereço do servidor para estabelecer
     // conexão
-    rtree->server.sin_family = AF_INET; // família de endereços
-   
+    rtree->server.sin_family = AF_INET;  // família de endereços
+
     // Estabelece conexão com o servidor definido na estrutura server
-    if (connect(rtree->sockfd,(struct sockaddr *)&rtree->server, sizeof(rtree->server)) < 0) {
+    if (connect(rtree->sockfd, (struct sockaddr *)&rtree->server, sizeof(rtree->server)) < 0) {
         perror("Erro ao conectar-se ao servidor");
         close(rtree->sockfd);
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -55,9 +55,9 @@ int network_connect(struct rtree_t *rtree) {
  * - De-serializar a mensagem de resposta;
  * - Retornar a mensagem de-serializada ou NULL em caso de erro.
  */
-struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT *msg) {
+struct _MessageT *network_send_receive(struct rtree_t *rtree, struct _MessageT *msg) {
     int sockfd = rtree->sockfd;
-    
+
     int len = message_t__get_packed_size(msg);
     uint8_t *sendBuf = malloc(len);
     if (sendBuf == NULL) {
@@ -65,18 +65,11 @@ struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT 
         return NULL;
     }
     message_t__pack(msg, sendBuf);
-    
     MessageT *msg2 = message_t__unpack(NULL, len, sendBuf);
-    printf("key: %s; val: %s; op: %d\n", msg2->entry->key, msg2->entry->value.data, msg2->opcode);
-    printf("buf0: %s\n", sendBuf);
-
-    
     int len_network = htonl(len);
     write(sockfd, &len_network, sizeof(int));
     write_all(sockfd, sendBuf, len);
-    printf("buf: %s\n", sendBuf);
     free(sendBuf);
-    
 
     int lengthRec;
     if (read(sockfd, &lengthRec, sizeof(int)) < 0) {
@@ -85,10 +78,9 @@ struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT 
     }
     lengthRec = ntohl(lengthRec);
 
-
     uint8_t recBuf[lengthRec];
     read_all(sockfd, recBuf, lengthRec);
-    
+
     MessageT *recMsg = message_t__unpack(NULL, lengthRec, recBuf);
 
     return recMsg;
@@ -97,7 +89,7 @@ struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT 
 /* A função network_close() fecha a ligação estabelecida por
  * network_connect().
  */
-int network_close(struct rtree_t * rtree) {
+int network_close(struct rtree_t *rtree) {
     close(rtree->sockfd);
     return 0;
 }

@@ -10,19 +10,19 @@
 void   message_t__entry__init
                      (MessageT__Entry         *message)
 {
-  static MessageT__Entry init_value = MESSAGE_T__ENTRY__INIT;
+  static const MessageT__Entry init_value = MESSAGE_T__ENTRY__INIT;
   *message = init_value;
 }
 void   message_t__data__init
                      (MessageT__Data         *message)
 {
-  static MessageT__Data init_value = MESSAGE_T__DATA__INIT;
+  static const MessageT__Data init_value = MESSAGE_T__DATA__INIT;
   *message = init_value;
 }
 void   message_t__init
                      (MessageT         *message)
 {
-  static MessageT init_value = MESSAGE_T__INIT;
+  static const MessageT init_value = MESSAGE_T__INIT;
   *message = init_value;
 }
 size_t message_t__get_packed_size
@@ -59,6 +59,8 @@ void   message_t__free_unpacked
                      (MessageT *message,
                       ProtobufCAllocator *allocator)
 {
+  if(!message)
+    return;
   assert(message->base.descriptor == &message_t__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
@@ -67,19 +69,19 @@ static const ProtobufCFieldDescriptor message_t__entry__field_descriptors[2] =
   {
     "key",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
     offsetof(MessageT__Entry, key),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "value",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(MessageT__Entry, value),
@@ -118,9 +120,9 @@ static const ProtobufCFieldDescriptor message_t__data__field_descriptors[2] =
   {
     "datasize",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(MessageT__Data, has_datasize),
+    0,   /* quantifier_offset */
     offsetof(MessageT__Data, datasize),
     NULL,
     NULL,
@@ -130,12 +132,12 @@ static const ProtobufCFieldDescriptor message_t__data__field_descriptors[2] =
   {
     "data",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
     offsetof(MessageT__Data, data),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -251,9 +253,9 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
   {
     "opcode",
     1,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(MessageT, has_opcode),
+    0,   /* quantifier_offset */
     offsetof(MessageT, opcode),
     &message_t__opcode__descriptor,
     NULL,
@@ -263,9 +265,9 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
   {
     "c_type",
     2,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(MessageT, has_c_type),
+    0,   /* quantifier_offset */
     offsetof(MessageT, c_type),
     &message_t__c_type__descriptor,
     NULL,
@@ -275,23 +277,23 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
   {
     "key",
     3,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
     offsetof(MessageT, key),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "value",
     4,
-    PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_BYTES,
-    offsetof(MessageT, has_value),
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
     offsetof(MessageT, value),
-    NULL,
+    &message_t__data__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
@@ -299,7 +301,7 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
   {
     "entry",
     5,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(MessageT, entry),
@@ -311,9 +313,9 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
   {
     "result",
     6,
-    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT32,
-    offsetof(MessageT, has_result),
+    0,   /* quantifier_offset */
     offsetof(MessageT, result),
     NULL,
     NULL,
@@ -328,7 +330,7 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
     offsetof(MessageT, n_keys),
     offsetof(MessageT, keys),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -340,7 +342,7 @@ static const ProtobufCFieldDescriptor message_t__field_descriptors[8] =
     offsetof(MessageT, n_values),
     offsetof(MessageT, values),
     NULL,
-    NULL,
+    &protobuf_c_empty_string,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },

@@ -1,25 +1,25 @@
-# // Grupo 4
-# // Renato Custódio nº56320
-# // Bruno Soares nº57100
-# // Guilherme Marques nº55472
+// Grupo 4
+// Renato Custódio nº56320
+// Bruno Soares nº57100
+// Guilherme Marques nº55472
 
 #include "../include/client_stub.h"
-#include "../include/client_stub-private.h"
-#include "../include/network_client.h"
-#include "../include/entry.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
+#include "../include/client_stub-private.h"
+#include "../include/entry.h"
+#include "../include/network_client.h"
 
-/* Função para estabelecer uma associação entre o cliente e o servidor, 
+/* Função para estabelecer uma associação entre o cliente e o servidor,
  * em que address_port é uma string no formato <hostname>:<port>.
  * Retorna NULL em caso de erro.
  */
 struct rtree_t *rtree_connect(const char *address_port) {
-    if(address_port == NULL){
+    if (address_port == NULL) {
         printf("address_port é null");
         return NULL;
     }
@@ -28,23 +28,23 @@ struct rtree_t *rtree_connect(const char *address_port) {
     char *token1 = strtok(address_port, ":");
     char *token2 = strtok(NULL, ":");
 
-    rtree->server.sin_port = htons(atoi(token2)); // Porta TCP
-    
-    if (inet_pton(AF_INET, token1, &rtree->server.sin_addr) < 1) {   // Endereço IP
+    rtree->server.sin_port = htons(atoi(token2));  // Porta TCP
+
+    if (inet_pton(AF_INET, token1, &rtree->server.sin_addr) < 1) {  // Endereço IP
         printf("Erro ao converter IP\n");
-        free(rtree);
-        return NULL; 
-    }
-    
-    if(network_connect(rtree) == -1){
         free(rtree);
         return NULL;
     }
-    
+
+    if (network_connect(rtree) == -1) {
+        free(rtree);
+        return NULL;
+    }
+
     return rtree;
 }
 
-/* Termina a associação entre o cliente e o servidor, fechando a 
+/* Termina a associação entre o cliente e o servidor, fechando a
  * ligação com o servidor e libertando toda a memória local.
  * Retorna 0 se tudo correr bem e -1 em caso de erro.
  */
@@ -60,23 +60,31 @@ int rtree_disconnect(struct rtree_t *rtree) {
  */
 int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
     struct _MessageT *msg = malloc(sizeof(struct _MessageT));
-    message_t__init(&msg);
+    if (msg == NULL) return -1;
 
-    msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
-    msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
-    msg->entry = malloc(sizeof(MessageT__Entry));
+    message_t__init(msg);
+
+    msg->entry = (MessageT__Entry *)malloc(sizeof(MessageT__Entry));
+    if (msg->entry == NULL) return -1;
+
     message_t__entry__init(msg->entry);
     msg->entry->key = entry->key;
-    msg->entry->value = malloc(sizeof(struct _MessageT__Data));
-    msg->entry->value.len = entry->value->datasize;
-    msg->entry->value.data = entry->value->data;
-    
-    
+
+    msg->entry->value = (MessageT__Data *)malloc(sizeof(MessageT__Data));
+    if (msg->entry->value == NULL) return -1;
+
+    message_t__data__init(msg->entry->value);
+
+    msg->entry->value->datasize = entry->value->datasize;
+    msg->entry->value->data = entry->value->data;
+    msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
+
     printf("antes do receive\n");
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(rtree, msg);
     printf("depois do receive\n");
-    
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return 0;
     }
 
@@ -94,16 +102,16 @@ struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
     msg.key = key;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
-    
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
-        return data_create2(msgRec->value.len, msgRec->value.data);
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return data_create2(msgRec->value->datasize, msgRec->value->data);
     }
 
     return NULL;
 }
 
-/* Função para remover um elemento da árvore. Vai libertar 
+/* Função para remover um elemento da árvore. Vai libertar
  * toda a memoria alocada na respetiva operação rtree_put().
  * Devolve: 0 (ok), -1 (key not found ou problemas).
  */
@@ -115,9 +123,9 @@ int rtree_del(struct rtree_t *rtree, char *key) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
     msg.key = key;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
-    
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return 0;
     }
 
@@ -133,9 +141,9 @@ int rtree_size(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_SIZE;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
-    
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return msgRec->result;
     }
 
@@ -151,9 +159,9 @@ int rtree_height(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_HEIGHT;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
-    
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return msgRec->result;
     }
 
@@ -170,9 +178,9 @@ char **rtree_get_keys(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return msgRec->keys;
     }
 
@@ -189,10 +197,10 @@ void **rtree_get_values(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_GETVALUES;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
-    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
-        return (void **) msgRec->values;
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return (void **)msgRec->values;
     }
 
     return NULL;

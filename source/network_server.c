@@ -1,20 +1,21 @@
-# // Grupo 4
-# // Renato Custódio nº56320
-# // Bruno Soares nº57100
-# // Guilherme Marques nº55472
+#// Grupo 4
+#// Renato Custódio nº56320
+#// Bruno Soares nº57100
+#// Guilherme Marques nº55472
 
 #include "../include/network_server.h"
-#include "../include/message-private.h"
-#include "../include/sdmessage.pb-c.h"
 
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "../include/message-private.h"
+#include "../include/sdmessage.pb-c.h"
 
 int sockfd;
 /* Função para preparar uma socket de receção de pedidos de ligação
@@ -25,42 +26,38 @@ int network_server_init(short port) {
     struct sockaddr_in server;
     int opt = 1;
 
-
-    if(tree_skel_init()==-1){
+    if (tree_skel_init() == -1) {
         return -1;
     }
 
-
     // Cria socket TCP
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Erro ao criar socket");
         return -1;
     }
 
-    if (setsockopt(sockfd , SOL_SOCKET,
-                   SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
 
     server.sin_family = AF_INET;
-    server.sin_port = htons(port); // Porta TCP
-    server.sin_addr.s_addr = htonl(INADDR_ANY); // Todos os endereços na máquina
+    server.sin_port = htons(port);               // Porta TCP
+    server.sin_addr.s_addr = htonl(INADDR_ANY);  // Todos os endereços na máquina
 
-    if (bind(sockfd, (struct sockaddr *) &server, sizeof(server)) < 0) {
+    if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
         perror("Erro ao fazer bind");
         close(sockfd);
         return -1;
     }
-    
+
     // Faz listen
-    if (listen(sockfd, 0) < 0){
+    if (listen(sockfd, 0) < 0) {
         perror("Erro ao executar listen");
         close(sockfd);
         return -1;
     };
-    
+
     return sockfd;
 }
 
@@ -75,16 +72,16 @@ int network_main_loop(int listening_socket) {
     struct sockaddr client;
     socklen_t size_client;
     int connsockfd;
-    while ((connsockfd = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
+    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) !=
+           -1) {  // mais um while, um cliente deve poder fazer vários pedidos
         printf("server recebeu conexao\n");
         struct _MessageT *message = network_receive(connsockfd);
-        printf("opcode: %s\n",(char *) message->entry->value.data);
-        //para testar       
-        if(invoke(message) == -1){
+        // para testar
+        if (invoke(message) == -1) {
             printf("O pedido nao foi processao\n");
             printf("ocorreu um erro\n");
         }
-        network_send(connsockfd,message);
+        network_send(connsockfd, message);
         close(connsockfd);
     }
     return 0;
@@ -97,18 +94,18 @@ int network_main_loop(int listening_socket) {
  */
 struct _MessageT *network_receive(int client_socket) {
     int lengthRec;
-    if(read(client_socket, &lengthRec, sizeof(int)) == 0) {
+    if (read(client_socket, &lengthRec, sizeof(int)) == 0) {
         return NULL;
     }
-    
-    lengthRec= ntohl(lengthRec);
+
+    lengthRec = ntohl(lengthRec);
 
     uint8_t buf[lengthRec];
     read_all(client_socket, buf, lengthRec);
-    
+
     MessageT *recv_msg = message_t__unpack(NULL, lengthRec, buf);
     printf("pointer: %d\n", recv_msg->c_type);
-    
+
     if (recv_msg == NULL) {
         fprintf(stdout, "error unpacking message\n");
         return NULL;
@@ -122,7 +119,7 @@ struct _MessageT *network_receive(int client_socket) {
  * - Libertar a memória ocupada por esta mensagem;
  * - Enviar a mensagem serializada, através do client_socket.
  */
-int network_send(int client_socket, struct _MessageT *msg){
+int network_send(int client_socket, struct _MessageT *msg) {
     int len = message_t__get_packed_size(msg);
     int len_network = htonl(len);
 
@@ -133,10 +130,10 @@ int network_send(int client_socket, struct _MessageT *msg){
     }
 
     message_t__pack(msg, buf);
-    
-    write(client_socket,&len_network, sizeof(int));
-    write_all(client_socket,buf, len);
-    //message_t__free_unpacked(msg, NULL);  mem leak
+
+    write(client_socket, &len_network, sizeof(int));
+    write_all(client_socket, buf, len);
+    // message_t__free_unpacked(msg, NULL);  mem leak
     free(buf);
 
     return 0;
