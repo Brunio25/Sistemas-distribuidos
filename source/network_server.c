@@ -72,15 +72,15 @@ int network_main_loop(int listening_socket) {
     struct sockaddr client;
     socklen_t size_client;
     int connsockfd;
-    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) !=
-           -1) {  // mais um while, um cliente deve poder fazer vários pedidos
+    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
         printf("server recebeu conexao\n");
         struct _MessageT *message = network_receive(connsockfd);
-        // para testar
+        
         if (invoke(message) == -1) {
             printf("O pedido nao foi processao\n");
             printf("ocorreu um erro\n");
         }
+        printf("memserver: %p\n",message->keys);
         network_send(connsockfd, message);
         close(connsockfd);
     }
@@ -104,7 +104,6 @@ struct _MessageT *network_receive(int client_socket) {
     read_all(client_socket, buf, lengthRec);
 
     MessageT *recv_msg = message_t__unpack(NULL, lengthRec, buf);
-    printf("pointer: %d\n", recv_msg->c_type);
 
     if (recv_msg == NULL) {
         fprintf(stdout, "error unpacking message\n");
@@ -121,6 +120,7 @@ struct _MessageT *network_receive(int client_socket) {
  */
 int network_send(int client_socket, struct _MessageT *msg) {
     int len = message_t__get_packed_size(msg);
+    
     int len_network = htonl(len);
 
     uint8_t *buf = malloc(len);
