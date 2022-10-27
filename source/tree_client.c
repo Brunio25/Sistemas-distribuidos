@@ -15,29 +15,30 @@ int main(int argc, char const *argv[]) {
     char input[19];
     const char tre[100] = "127.0.0.1:1025";
     printf("Introduza um comando da Lista: \n");
-    printf("put <key> <data>\n");
-    printf("get <key>\n");
-    printf("del <key>\n");
-    printf("size\n");
-    printf("height\n");
-    printf("getkeys\n");
-    printf("getvalues\n");
-    printf("quit\n");
+    printf("\tput <key> <data>\n");
+    printf("\tget <key>\n");
+    printf("\tdel <key>\n");
+    printf("\tsize\n");
+    printf("\theight\n");
+    printf("\tgetkeys\n");
+    printf("\tgetvalues\n");
+    printf("\tquit\n");
     printf("\n");
 
     struct rtree_t *rtree = rtree_connect(tre);
     while(1) {
         fgets(input, 19, stdin);
         
-        if(rtree == NULL){
+        if(rtree == NULL) {
             printf("erro na ligacao ao servidor\n");
             return -1;
         }
-        
+       
         char *command;
-        if (strchr(input, ' ') != NULL){
+        if (strchr(input, ' ') != NULL) {
             command = strtok(input, " ");
-        }else{
+        }
+        else {
             strcpy(command,input);
             command[strlen(command)-1] = '\0';
         }
@@ -45,10 +46,11 @@ int main(int argc, char const *argv[]) {
         if(strcmp(command, "put") == 0) {
             char *key = strtok(NULL, " ");
             char *data = strtok(NULL, " ");
-            rtree_put(rtree, entry_create(key,data));
+            rtree_put(rtree, entry_create(key,data_create2(strlen(data), data)));
         } else if(strcmp(command, "get") == 0) {
             char *key = strtok(NULL, " ");
-            rtree_get(rtree,key);
+            struct data_t *data = rtree_get(rtree,key);
+            printf("data: %s\n",(char *)data->data);
         } else if(strcmp(command, "del") == 0) {
             char *key = strtok(NULL, " ");
             rtree_del(rtree,key);
@@ -69,8 +71,5 @@ int main(int argc, char const *argv[]) {
     }
     rtree_disconnect(rtree);
 
-    /* const char tre[100] = "127.0.0.1:1025";
-    struct rtree_t *rtree = rtree_connect(tre);
-    rtree_disconnect(rtree); */
     return 0;
 }

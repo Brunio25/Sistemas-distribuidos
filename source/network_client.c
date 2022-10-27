@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) a base da
@@ -57,25 +58,38 @@ int network_connect(struct rtree_t *rtree) {
 struct _MessageT *network_send_receive(struct rtree_t * rtree, struct _MessageT *msg) {
     int sockfd = rtree->sockfd;
     
-    unsigned len = message_t__get_packed_size(msg);
-    char *sendBuf = malloc(len);
+    int len = message_t__get_packed_size(msg);
+    uint8_t *sendBuf = malloc(len);
     if (sendBuf == NULL) {
         perror("malloc error\n");
         return NULL;
     }
+    message_t__pack(msg, sendBuf);
+    
+    MessageT *msg2 = message_t__unpack(NULL, len, sendBuf);
+    printf("key: %s; val: %s; op: %d\n", msg2->entry->key, msg2->entry->value.data, msg2->opcode);
+    printf("buf0: %s\n", sendBuf);
 
-    message_t__pack(msg, (uint8_t *)&sendBuf);
-    write_all(sockfd, sendBuf, len); //Possível memory leak msg
+    
+    int len_network = htonl(len);
+    write(sockfd, &len_network, sizeof(int));
+    write_all(sockfd, sendBuf, len);
+    printf("buf: %s\n", sendBuf);
     free(sendBuf);
+    
 
-    uint8_t *recBuf = malloc(MAX_MSG + 1);
-    if (read(sockfd, recBuf, MAX_MSG) < 0) {
+    int lengthRec;
+    if (read(sockfd, &lengthRec, sizeof(int)) < 0) {
         perror("Receaving error\n");
         return NULL;
     }
+    lengthRec = ntohl(lengthRec);
 
-    struct _MessageT *recMsg = message_t__unpack(NULL, MAX_MSG, recBuf);
-    free(recBuf);
+
+    uint8_t recBuf[lengthRec];
+    read_all(sockfd, recBuf, lengthRec);
+    
+    MessageT *recMsg = message_t__unpack(NULL, lengthRec, recBuf);
 
     return recMsg;
 }

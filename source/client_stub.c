@@ -51,75 +51,149 @@ struct rtree_t *rtree_connect(const char *address_port) {
 int rtree_disconnect(struct rtree_t *rtree) {
     network_close(rtree);
     free(rtree);
+    return 0;
 }
 
 /* Função para adicionar um elemento na árvore.
  * Se a key já existe, vai substituir essa entrada pelos novos dados.
  * Devolve 0 (ok, em adição/substituição) ou -1 (problemas).
  */
-int rtree_put(struct rtree_t *rtree, struct entry_t *entry){
-    struct _MessageT msg;
-    msg.opcode = MESSAGE_T__OPCODE__OP_PUT;
-    msg.entry = entry;
-    network_send_receive(rtree,&msg);
+int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
+    struct _MessageT *msg = malloc(sizeof(struct _MessageT));
+    message_t__init(&msg);
 
+    msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
+    msg->entry = malloc(sizeof(MessageT__Entry));
+    message_t__entry__init(msg->entry);
+    msg->entry->key = entry->key;
+    msg->entry->value = malloc(sizeof(struct _MessageT__Data));
+    msg->entry->value.len = entry->value->datasize;
+    msg->entry->value.data = entry->value->data;
+    
+    
+    printf("antes do receive\n");
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    printf("depois do receive\n");
+    
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return 0;
+    }
 
+    return -1;
 }
 
 /* Função para obter um elemento da árvore.
  * Em caso de erro, devolve NULL.
  */
-struct data_t *rtree_get(struct rtree_t *rtree, char *key){
+struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
     struct _MessageT msg;
-    msg.opcode = MESSAGE_T__OPCODE__OP_GET;
-    msg.key = key;
-    network_send_receive(rtree,&msg);
+    message_t__init(&msg);
 
+    msg.opcode = MESSAGE_T__OPCODE__OP_GET;
+    msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
+    msg.key = key;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return data_create2(msgRec->value.len, msgRec->value.data);
+    }
+
+    return NULL;
 }
 
 /* Função para remover um elemento da árvore. Vai libertar 
  * toda a memoria alocada na respetiva operação rtree_put().
  * Devolve: 0 (ok), -1 (key not found ou problemas).
  */
-int rtree_del(struct rtree_t *rtree, char *key){
+int rtree_del(struct rtree_t *rtree, char *key) {
     struct _MessageT msg;
-    msg.opcode = MESSAGE_T__OPCODE__OP_DEL;
-    msg.key = key;
-    network_send_receive(rtree,&msg);
+    message_t__init(&msg);
 
+    msg.opcode = MESSAGE_T__OPCODE__OP_DEL;
+    msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
+    msg.key = key;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return 0;
+    }
+
+    return -1;
 }
 
 /* Devolve o número de elementos contidos na árvore.
  */
-int rtree_size(struct rtree_t *rtree){
+int rtree_size(struct rtree_t *rtree) {
     struct _MessageT msg;
-    msg.opcode = MESSAGE_T__OPCODE__OP_SIZE;
-    struct _MessageT *message = network_send_receive(rtree,&msg);
+    message_t__init(&msg);
 
+    msg.opcode = MESSAGE_T__OPCODE__OP_SIZE;
+    msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return msgRec->result;
+    }
+
+    return -1;
 }
 
 /* Função que devolve a altura da árvore.
  */
-int rtree_height(struct rtree_t *rtree){
+int rtree_height(struct rtree_t *rtree) {
     struct _MessageT msg;
+    message_t__init(&msg);
+
     msg.opcode = MESSAGE_T__OPCODE__OP_HEIGHT;
-    struct _MessageT *message = network_send_receive(rtree,&msg);
+    msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+    
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return msgRec->result;
+    }
+
+    return -1;
 }
 
 /* Devolve um array de char* com a cópia de todas as keys da árvore,
  * colocando um último elemento a NULL.
  */
-char **rtree_get_keys(struct rtree_t *rtree){
+char **rtree_get_keys(struct rtree_t *rtree) {
     struct _MessageT msg;
+    message_t__init(&msg);
+
     msg.opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
-    struct _MessageT *message = network_send_receive(rtree,&msg);
+    msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return msgRec->keys;
+    }
+
+    return NULL;
 }
 
 /* Devolve um array de void* com a cópia de todas os values da árvore,
  * colocando um último elemento a NULL.
  */
-void **rtree_get_values(struct rtree_t *rtree){
+void **rtree_get_values(struct rtree_t *rtree) {
     struct _MessageT msg;
+    message_t__init(&msg);
+
     msg.opcode = MESSAGE_T__OPCODE__OP_GETVALUES;
-    struct _MessageT *message = network_send_receive(rtree,&msg);
+    msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    struct _MessageT *msgRec = network_send_receive(rtree,&msg);
+
+    if (msgRec->has_opcode && msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        return (void **) msgRec->values;
+    }
+
+    return NULL;
 }

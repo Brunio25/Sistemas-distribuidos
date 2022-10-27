@@ -6,12 +6,13 @@
 #include "../include/message-private.h"
 
 #include <errno.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <unistd.h>
 
 
-int write_all(int sock, char *buf, int len) {
+int write_all(int sock, uint8_t *buf, int len) {
     int bufsize = len;
     while(len>0) {
         int res = write(sock, buf, len);
@@ -26,17 +27,16 @@ int write_all(int sock, char *buf, int len) {
     return bufsize;
 }
 
-int read_all(int sock, char *buf, int len) {
-    int bufsize = len;
-    while(len>0) {
-        int res = read(sock, buf, len);
-        if(res<0) {
-            if(errno==EINTR) continue;
-            perror("read failed:");
-            return res;
-        }
-        buf += res;
-        len -= res;
+int read_all(int sock, uint8_t *buf, int len) {
+  int readBytes = 0;
+  int result;
+
+  while(readBytes < len){
+    result = read(sock, buf + readBytes, len - readBytes);
+    if(result < 1){
+      return result;
     }
-    return bufsize;
+    readBytes += result;
+  }
+  return readBytes;
 }
