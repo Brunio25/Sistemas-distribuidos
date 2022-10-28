@@ -61,6 +61,7 @@ int main(int argc, char const *argv[]) {
         return -1;
     }
 
+    usage();
     while (1) {
         fgets(input, 19, stdin);
         input[strcspn(input, "\n")] = '\0';
