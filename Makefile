@@ -21,9 +21,9 @@ tree-server = tree_server.o data.o entry.o tree.o network_server.o message.o sdm
 
 tree-client = tree_client.o data.o entry.o client_stub.o network_client.o message.o sdmessage.pb-c.o
 
-client-lib = client_stub.o network_client.o data.o entry.o
+objects = tree_server.o data.o entry.o tree.o network_server.o message.o sdmessage.pb-c.o tree_skel.o tree_client.o network_client.o client_stub.o
 
-OBJETOS = client-lib.o tree-client.o tree-server.o
+client-lib = client_stub.o network_client.o data.o entry.o
 
 CFLAGS = -g -Wall -I
 
@@ -45,8 +45,7 @@ tree-server: $(tree-server)
 
 
 clean:
-#	rm -f -v $(OBJ_DIR)/*.o !("tree.o")
-	rm -f $(filter-out tree.o,$(OBJ_DIR))
+	rm -f $(filter-out $(OBJ_DIR)/tree.o,$(addprefix $(OBJ_DIR)/,$(objects)))
 	rm -f $(BIN_DIR)/*
 	rm -f $(LIB_DIR)/*
     

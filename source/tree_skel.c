@@ -42,7 +42,7 @@ void tree_skel_destroy() {
 int invoke(struct _MessageT *msg) {
     MessageT__Opcode op = msg->opcode;
 
-    if (tree == NULL) {
+    if (tree == NULL || op == MESSAGE_T__OPCODE__OP_BAD) {
         msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         return -1;
@@ -65,15 +65,14 @@ int invoke(struct _MessageT *msg) {
 
     } else if (op == MESSAGE_T__OPCODE__OP_GET && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
         struct data_t *temp = tree_get(tree, msg->key);
-
+        msg->opcode = op + 1;
+        msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
+        msg->value = malloc(sizeof(MessageT__Data));
+        message_t__data__init(msg->value);
         if (temp == NULL) {
-            msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
-            msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+            msg->value->datasize = 0;
+            msg->value->data = NULL;
         } else {
-            msg->opcode = op + 1;
-            msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
-            msg->value = malloc(sizeof(MessageT__Data));
-            message_t__data__init(msg->value);
             msg->value->datasize = temp->datasize;
             msg->value->data = temp->data;
         }
@@ -81,7 +80,16 @@ int invoke(struct _MessageT *msg) {
     } else if (op == MESSAGE_T__OPCODE__OP_PUT && msg->c_type == MESSAGE_T__C_TYPE__CT_ENTRY) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
-        tree_put(tree, msg->entry->key, data_create2(msg->entry->value->datasize, msg->entry->value->data));
+        struct data_t *data = data_create2(msg->entry->value->datasize, msg->entry->value->data);
+        if (data == NULL) {
+            msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
+            return -1;
+        }
+
+        if ((tree_put(tree, msg->entry->key, data)) == -1) {
+            msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
+            return -1;
+        }
 
     } else if (op == MESSAGE_T__OPCODE__OP_GETKEYS && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
         msg->opcode = op + 1;
@@ -93,10 +101,17 @@ int invoke(struct _MessageT *msg) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_VALUES;
         msg->n_values = tree_size(tree);
-        msg->values = (char **)tree_get_values(tree);
+        msg->values = (struct data_t **)tree_get_values(tree);
+        /* struct data_t *data = (struct data_t *)vid[0];
+        printf("data: %s\n", (char *)data->data);
+        int i = 0;
+        while (i < msg->n_values) {
+            printf("s: %s\n", (char *)vid[i]);
+            i++;
+        } */
 
     } else {
-        msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
+        msg->opcode = MESSAGE_T__OPCODE__OP_BAD;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         return -1;
     }

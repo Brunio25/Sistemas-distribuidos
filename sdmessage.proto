@@ -41,6 +41,6 @@ message message_t
         Entry entry = 5;
         int32 result = 6;
         repeated string keys = 7;
-        repeated string values = 8;
+        repeated Data values = 8;
 
 };

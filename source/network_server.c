@@ -72,16 +72,21 @@ int network_main_loop(int listening_socket) {
     struct sockaddr client;
     socklen_t size_client;
     int connsockfd;
-    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
-        printf("server recebeu conexao\n");
-        struct _MessageT *message = network_receive(connsockfd);
 
-        if (invoke(message) == -1) {
-            printf("O pedido nao foi processao\n");
-            printf("ocorreu um erro\n");
+    printf("Awaiting connection...\n");
+    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
+        printf("Connection Estabilished.\n");
+        struct _MessageT *message = NULL;
+
+        while ((message = network_receive(connsockfd)) != NULL) {
+            if (invoke(message) == -1) {
+                printf("O pedido nao foi processao\n");
+                printf("ocorreu um erro\n");
+            }
+
+            network_send(connsockfd, message);
         }
-        printf("memserver: %p\n", message->keys);
-        network_send(connsockfd, message);
+        printf("Connection Closed.\n");
         close(connsockfd);
     }
     return 0;
@@ -94,19 +99,23 @@ int network_main_loop(int listening_socket) {
  */
 struct _MessageT *network_receive(int client_socket) {
     int lengthRec;
-    if (read(client_socket, &lengthRec, sizeof(int)) == 0) {
+    if (read(client_socket, &lengthRec, sizeof(int)) < 0) {
+        perror("read error\n");
         return NULL;
     }
 
     lengthRec = ntohl(lengthRec);
 
     uint8_t buf[lengthRec];
-    read_all(client_socket, buf, lengthRec);
+    if (read_all(client_socket, buf, lengthRec) < 0) {
+        perror("read failed\n");
+        return NULL;
+    }
 
     MessageT *recv_msg = message_t__unpack(NULL, lengthRec, buf);
 
     if (recv_msg == NULL) {
-        fprintf(stdout, "error unpacking message\n");
+        perror("error unpacking message\n");
         return NULL;
     }
 
@@ -119,20 +128,28 @@ struct _MessageT *network_receive(int client_socket) {
  * - Enviar a mensagem serializada, através do client_socket.
  */
 int network_send(int client_socket, struct _MessageT *msg) {
+    printf("aqui\n");
     int len = message_t__get_packed_size(msg);
-
+    printf("lenser: %d\n", len);
     int len_network = htonl(len);
 
     uint8_t *buf = malloc(len);
     if (buf == NULL) {
-        fprintf(stdout, "malloc error\n");
-        return 1;
+        perror("malloc error\n");
+        return -1;
     }
 
     message_t__pack(msg, buf);
 
-    write(client_socket, &len_network, sizeof(int));
-    write_all(client_socket, buf, len);
+    if ((write(client_socket, &len_network, sizeof(int))) < 0) {
+        perror("write failed\n");
+        return -1;
+    }
+
+    if ((write_all(client_socket, buf, len)) < 0) {
+        perror("write failed\n");
+        return -1;
+    }
     // message_t__free_unpacked(msg, NULL);  mem leak
     free(buf);
 

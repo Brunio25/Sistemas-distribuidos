@@ -20,12 +20,12 @@
  */
 struct rtree_t *rtree_connect(const char *address_port) {
     if (address_port == NULL) {
-        printf("address_port é null");
+        perror("Invalid Port\n");
         return NULL;
     }
-    
+
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
-    char *token1 = strtok(strdup(address_port), ":");
+    char *token1 = strtok(address_port, ":");
     char *token2 = strtok(NULL, ":");
 
     rtree->server.sin_port = htons(atoi(token2));  // Porta TCP
@@ -80,9 +80,7 @@ int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
     msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
     msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
 
-    
     struct _MessageT *msgRec = network_send_receive(rtree, msg);
-    
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return 0;
@@ -101,7 +99,7 @@ struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
     msg.opcode = MESSAGE_T__OPCODE__OP_GET;
     msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
     msg.key = key;
-    
+
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
@@ -179,8 +177,9 @@ char **rtree_get_keys(struct rtree_t *rtree) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    int i = 0;
 
-    printf("key : %p\n",msgRec->keys);
+    msgRec->keys[msgRec->n_keys] = NULL;
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return msgRec->keys;
     }
@@ -200,6 +199,7 @@ void **rtree_get_values(struct rtree_t *rtree) {
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
+    msgRec->values[msgRec->n_values] = NULL;
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         return (void **)msgRec->values;
     }

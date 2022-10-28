@@ -10,6 +10,30 @@
 
 #include "../include/client_stub-private.h"
 #include "../include/client_stub.h"
+#include "../include/data.h"
+
+void printKeys(char **strs) {
+    int i = 0;
+
+    printf("Keys:");
+    while (strs[i] != NULL) {
+        printf(" %s", (char *)strs[i]);
+        i++;
+    }
+    printf("\n");
+}
+
+void printValues(void **values) {
+    int i = 0;
+
+    printf("Values:");
+    while (values[i] != NULL) {
+        struct data_t *data = (struct data_t *)values[i];
+        printf(" %s", (char *)data->data);
+        i++;
+    }
+    printf("\n");
+}
 
 int main(int argc, char const *argv[]) {
     char input[19];
@@ -25,27 +49,28 @@ int main(int argc, char const *argv[]) {
     printf("\tquit\n");
     printf("\n");
 
-    while (1) {
-        struct rtree_t *rtree = rtree_connect(tre);
-        fgets(input, 19, stdin);
+    struct rtree_t *rtree = rtree_connect(tre);
 
-        if (rtree == NULL) {
-            printf("erro na ligacao ao servidor\n");
-            return -1;
-        }
+    if (rtree == NULL) {
+        printf("erro na ligacao ao servidor\n");
+        return -1;
+    }
+
+    while (1) {
+        fgets(input, 19, stdin);
+        input[strcspn(input, "\n")] = '\0';
 
         char *command;
         if (strchr(input, ' ') != NULL) {
             command = strtok(input, " ");
         } else {
-            command = strdup(input);
-            command[strlen(command) - 1] = '\0';
+            command = input;
         }
 
         if (strcmp(command, "put") == 0) {
             int bool;
             char *key = strtok(NULL, " ");
-            char *data = strtok(NULL, "\n");  // replicar por todos
+            char *data = strtok(NULL, " ");  // replicar por todos
             bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));
             if (bool == -1) {
                 printf("Problemas com o put\n");
@@ -63,7 +88,11 @@ int main(int argc, char const *argv[]) {
 
         } else if (strcmp(command, "del") == 0) {
             char *key = strtok(NULL, "\n");
-            rtree_del(rtree, key);
+            if (rtree_del(rtree, key) == -1) {
+                printf("Problemas com o delete\n");
+            } else {
+                printf("O delete foi bem sucedido\n");
+            }
 
         } else if (strcmp(command, "size") == 0) {
             printf("size: %d\n", rtree_size(rtree));
@@ -72,21 +101,18 @@ int main(int argc, char const *argv[]) {
             printf("height: %d\n", rtree_height(rtree));
 
         } else if (strcmp(command, "getkeys") == 0) {
-            printf("mem: %p\n", rtree_get_keys(rtree));
+            printKeys(rtree_get_keys(rtree));
 
         } else if (strcmp(command, "getvalues") == 0) {
-            rtree_get_values(rtree);
+            printValues(rtree_get_values(rtree));
 
         } else if (strcmp(command, "quit") == 0) {
-            rtree_disconnect(rtree);
             break;
-
         } else {
             printf("comando invalido\n");
         }
-
-        rtree_disconnect(rtree);
     }
 
+    rtree_disconnect(rtree);
     return 0;
 }
