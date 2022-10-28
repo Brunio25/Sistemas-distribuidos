@@ -177,7 +177,6 @@ char **rtree_get_keys(struct rtree_t *rtree) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
-    int i = 0;
 
     msgRec->keys[msgRec->n_keys] = NULL;
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {

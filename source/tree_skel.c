@@ -101,7 +101,22 @@ int invoke(struct _MessageT *msg) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_VALUES;
         msg->n_values = tree_size(tree);
-        msg->values = (struct data_t **)tree_get_values(tree);
+        msg->values = (MessageT__Data **)malloc((msg->n_values) * sizeof(MessageT__Data *));
+
+        struct data_t **values = (struct data_t **)tree_get_values(tree);
+
+        int i = 0;
+        while (i < msg->n_values) {
+            msg->values[i] = (MessageT__Data *)malloc(sizeof(MessageT__Data));
+            message_t__data__init(msg->values[i]);
+
+            msg->values[i]->data = (char *)values[i]->data;
+            msg->values[i]->datasize = values[i]->datasize;
+            i++;
+        }
+
+        printf(" ");
+
         /* struct data_t *data = (struct data_t *)vid[0];
         printf("data: %s\n", (char *)data->data);
         int i = 0;

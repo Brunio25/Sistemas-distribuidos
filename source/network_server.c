@@ -7,6 +7,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@ int sockfd;
  * Retornar descritor do socket (OK) ou -1 (erro).
  */
 int network_server_init(short port) {
+    signal(SIGPIPE, SIG_IGN);
     struct sockaddr_in server;
     int opt = 1;
 
@@ -80,13 +82,12 @@ int network_main_loop(int listening_socket) {
 
         while ((message = network_receive(connsockfd)) != NULL) {
             if (invoke(message) == -1) {
-                printf("O pedido nao foi processao\n");
-                printf("ocorreu um erro\n");
+                printf("There Has Been an Unexpected Error!\n");
             }
 
             network_send(connsockfd, message);
         }
-        printf("Connection Closed.\n");
+        printf("Connection Terminated.\n");
         close(connsockfd);
     }
     return 0;
@@ -128,9 +129,7 @@ struct _MessageT *network_receive(int client_socket) {
  * - Enviar a mensagem serializada, através do client_socket.
  */
 int network_send(int client_socket, struct _MessageT *msg) {
-    printf("aqui\n");
     int len = message_t__get_packed_size(msg);
-    printf("lenser: %d\n", len);
     int len_network = htonl(len);
 
     uint8_t *buf = malloc(len);

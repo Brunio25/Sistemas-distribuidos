@@ -3,6 +3,7 @@
 #// Bruno Soares nº57100
 #// Guilherme Marques nº55472
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 #include "../include/client_stub-private.h"
 #include "../include/client_stub.h"
 #include "../include/data.h"
+#include "../include/sdmessage.pb-c.h"
 
 void printKeys(char **strs) {
     int i = 0;
@@ -28,17 +30,14 @@ void printValues(void **values) {
 
     printf("Values:");
     while (values[i] != NULL) {
-        struct data_t *data = (struct data_t *)values[i];
-        printf(" %s", (char *)data->data);
+        printf(" %s", (char *)((MessageT__Data *)values[i])->data);
         i++;
     }
     printf("\n");
 }
 
-int main(int argc, char const *argv[]) {
-    char input[19];
-    const char tre[100] = "127.0.0.1:1025";
-    printf("Introduza um comando da Lista: \n");
+void usage() {
+    printf("Insert one of the below commands: \n");
     printf("\tput <key> <data>\n");
     printf("\tget <key>\n");
     printf("\tdel <key>\n");
@@ -48,6 +47,12 @@ int main(int argc, char const *argv[]) {
     printf("\tgetvalues\n");
     printf("\tquit\n");
     printf("\n");
+}
+
+int main(int argc, char const *argv[]) {
+    signal(SIGPIPE, SIG_IGN);
+    char input[19];
+    const char tre[100] = "127.0.0.1:1025";
 
     struct rtree_t *rtree = rtree_connect(tre);
 
@@ -68,48 +73,50 @@ int main(int argc, char const *argv[]) {
         }
 
         if (strcmp(command, "put") == 0) {
-            int bool;
             char *key = strtok(NULL, " ");
-            char *data = strtok(NULL, " ");  // replicar por todos
-            bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));
+            char *data = strtok(NULL, " ");
+
+            int bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));  // memory leak?
             if (bool == -1) {
-                printf("Problemas com o put\n");
+                printf("Insertion on Remote Tree Failed.\n");
             } else {
-                printf("O put foi bem sucedido\n");
+                printf("Insertion on Remote Tree Successful!\n");
             }
         } else if (strcmp(command, "get") == 0) {
             char *key = strtok(NULL, "\n");
             struct data_t *data = rtree_get(rtree, key);
             if (data != NULL) {
-                printf("data: %s\n", (char *)data->data);
+                printf("Fetched Data: %s\n", (char *)data->data);
             } else {
-                printf("Não ha nenhum valor armazenado na arvore com a chave dada\n");
+                printf("There isn't a entry of key: %s on the Remote Tree.\n", key);
             }
 
         } else if (strcmp(command, "del") == 0) {
             char *key = strtok(NULL, "\n");
             if (rtree_del(rtree, key) == -1) {
-                printf("Problemas com o delete\n");
+                printf("Deletion on Remote Tree Failed.\n");
             } else {
-                printf("O delete foi bem sucedido\n");
+                printf("Deletion from Remote Tree Successful!\n");
             }
 
         } else if (strcmp(command, "size") == 0) {
-            printf("size: %d\n", rtree_size(rtree));
+            printf("Size: %d\n", rtree_size(rtree));
 
         } else if (strcmp(command, "height") == 0) {
-            printf("height: %d\n", rtree_height(rtree));
+            printf("Height: %d\n", rtree_height(rtree));
 
         } else if (strcmp(command, "getkeys") == 0) {
             printKeys(rtree_get_keys(rtree));
 
         } else if (strcmp(command, "getvalues") == 0) {
-            printValues(rtree_get_values(rtree));
+            printValues(rtree_get_values(rtree));  // mem leak
 
         } else if (strcmp(command, "quit") == 0) {
+            printf("Connection Will Now Be Terminated!\n");
             break;
         } else {
-            printf("comando invalido\n");
+            printf("Invalid Command\n");
+            usage();
         }
     }
 
