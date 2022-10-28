@@ -32,6 +32,8 @@ all: client-lib.o tree-client tree-server
 %.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(INC_DIR) -o $(OBJ_DIR)/$@ -c $<
 
+tree.o: $(OBJ_DIR)/tree.o
+
 client-lib.o: $(client-lib)
 			ld -r $(addprefix $(OBJ_DIR)/,$^) -o $(LIB_DIR)/$@
 
@@ -39,11 +41,12 @@ tree-client: $(tree-client)
 	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 tree-server: $(tree-server)
-	$(CC) $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@  $(LDFLAGS)
+	$(CC) $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 
 clean:
-	rm -f $(OBJ_DIR)/*.o
+#	rm -f -v $(OBJ_DIR)/*.o !("tree.o")
+	rm -f $(filter-out tree.o,$(OBJ_DIR))
 	rm -f $(BIN_DIR)/*
 	rm -f $(LIB_DIR)/*
     

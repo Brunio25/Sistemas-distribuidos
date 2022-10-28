@@ -75,12 +75,12 @@ int network_main_loop(int listening_socket) {
     while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
         printf("server recebeu conexao\n");
         struct _MessageT *message = network_receive(connsockfd);
-        
+
         if (invoke(message) == -1) {
             printf("O pedido nao foi processao\n");
             printf("ocorreu um erro\n");
         }
-        printf("memserver: %p\n",message->keys);
+        printf("memserver: %p\n", message->keys);
         network_send(connsockfd, message);
         close(connsockfd);
     }
@@ -120,7 +120,7 @@ struct _MessageT *network_receive(int client_socket) {
  */
 int network_send(int client_socket, struct _MessageT *msg) {
     int len = message_t__get_packed_size(msg);
-    
+
     int len_network = htonl(len);
 
     uint8_t *buf = malloc(len);

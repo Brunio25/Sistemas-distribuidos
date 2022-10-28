@@ -20,7 +20,7 @@ struct tree_t *tree;
  */
 int tree_skel_init() {
     tree = tree_create();
-    
+
     if (tree == NULL) {
         return -1;
     }
@@ -43,33 +43,27 @@ int invoke(struct _MessageT *msg) {
     MessageT__Opcode op = msg->opcode;
 
     if (tree == NULL) {
-
         msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         return -1;
-
     }
 
     if (op == MESSAGE_T__OPCODE__OP_SIZE && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
-
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
         msg->result = tree_size(tree);
-        
-    } else if (op == MESSAGE_T__OPCODE__OP_HEIGHT && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
 
+    } else if (op == MESSAGE_T__OPCODE__OP_HEIGHT && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
         msg->result = tree_height(tree);
 
     } else if (op == MESSAGE_T__OPCODE__OP_DEL && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
-
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         tree_del(tree, msg->key);
 
     } else if (op == MESSAGE_T__OPCODE__OP_GET && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
-
         struct data_t *temp = tree_get(tree, msg->key);
 
         if (temp == NULL) {
@@ -83,32 +77,28 @@ int invoke(struct _MessageT *msg) {
             msg->value->datasize = temp->datasize;
             msg->value->data = temp->data;
         }
-        
-    } else if (op == MESSAGE_T__OPCODE__OP_PUT && msg->c_type == MESSAGE_T__C_TYPE__CT_ENTRY) {
 
+    } else if (op == MESSAGE_T__OPCODE__OP_PUT && msg->c_type == MESSAGE_T__C_TYPE__CT_ENTRY) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         tree_put(tree, msg->entry->key, data_create2(msg->entry->value->datasize, msg->entry->value->data));
 
     } else if (op == MESSAGE_T__OPCODE__OP_GETKEYS && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
-
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
+        msg->n_keys = tree_size(tree);
         msg->keys = tree_get_keys(tree);
-        
 
     } else if (op == MESSAGE_T__OPCODE__OP_GETVALUES && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
-
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_VALUES;
+        msg->n_values = tree_size(tree);
         msg->values = (char **)tree_get_values(tree);
 
     } else {
-
         msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
         return -1;
-
     }
 
     return 0;

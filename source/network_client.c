@@ -69,13 +69,14 @@ struct _MessageT *network_send_receive(struct rtree_t *rtree, struct _MessageT *
     write(sockfd, &len_network, sizeof(int));
     write_all(sockfd, sendBuf, len);
     free(sendBuf);
+
     int lengthRec;
     if (read(sockfd, &lengthRec, sizeof(int)) < 0) {
         perror("Receaving error\n");
         return NULL;
     }
     lengthRec = ntohl(lengthRec);
-    
+
     uint8_t recBuf[lengthRec];
     read_all(sockfd, recBuf, lengthRec);
 
