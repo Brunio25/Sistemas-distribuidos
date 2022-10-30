@@ -13,6 +13,7 @@
 #include "../include/client_stub.h"
 #include "../include/data.h"
 #include "../include/sdmessage.pb-c.h"
+#include "../include/tree_client-private.h"
 
 void printKeys(char **strs) {
     int i = 0;
@@ -62,12 +63,10 @@ int main(int argc, char const *argv[]) {
         return -1;
     }
 
-    const char tre[100] = "127.0.0.1:1025";
-
     char input[100];
     signal(SIGPIPE, SIG_IGN);
 
-    struct rtree_t *rtree = rtree_connect(tre);
+    struct rtree_t *rtree = rtree_connect(argv[1]);
 
     if (rtree == NULL) {
         printf("erro na ligacao ao servidor\n");
@@ -90,7 +89,7 @@ int main(int argc, char const *argv[]) {
             char *key = strtok(NULL, " ");
             char *data = strtok(NULL, " ");
 
-            int bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));  // memory leak?
+            int bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));
             if (bool == -1) {
                 printf("Insertion on Remote Tree Failed.\n");
             } else {
@@ -123,7 +122,7 @@ int main(int argc, char const *argv[]) {
             printKeys(rtree_get_keys(rtree));
 
         } else if (strcmp(command, "getvalues") == 0) {
-            printValues(rtree_get_values(rtree));  // mem leak
+            printValues(rtree_get_values(rtree));
 
         } else if (strcmp(command, "quit") == 0) {
             printf("Connection Will Now Be Terminated!\n");
