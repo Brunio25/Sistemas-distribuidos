@@ -6,6 +6,7 @@
 #include "../include/network_server.h"
 
 #include <arpa/inet.h>
+#include <errno.h>  // remove
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
@@ -38,7 +39,12 @@ int network_server_init(short port) {
         return -1;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -90,6 +96,7 @@ int network_main_loop(int listening_socket) {
         printf("Connection Terminated.\n");
         close(connsockfd);
     }
+    printf("error: %d", errno);  // TODO remove e include de errno.h
     return 0;
 }
 

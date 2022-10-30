@@ -50,9 +50,22 @@ void usage() {
 }
 
 int main(int argc, char const *argv[]) {
-    signal(SIGPIPE, SIG_IGN);
-    char input[19];
+    if (argc != 2) {
+        printf("Usage: ./tree-client <server_IP:server_port>\n");
+        return -1;
+    }
+
+    char *isValid = strchr(argv[1], ':');
+
+    if (isValid == NULL) {
+        printf("Usage: ./tree-client <server_IP:server_port>\n");
+        return -1;
+    }
+
     const char tre[100] = "127.0.0.1:1025";
+
+    char input[100];
+    signal(SIGPIPE, SIG_IGN);
 
     struct rtree_t *rtree = rtree_connect(tre);
 
@@ -63,7 +76,7 @@ int main(int argc, char const *argv[]) {
 
     usage();
     while (1) {
-        fgets(input, 19, stdin);
+        fgets(input, 100, stdin);
         input[strcspn(input, "\n")] = '\0';
 
         char *command;

@@ -5,6 +5,7 @@
 
 #include "../include/client_stub.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,14 @@ struct rtree_t *rtree_connect(const char *address_port) {
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
     char *token1 = strtok(address_port, ":");
     char *token2 = strtok(NULL, ":");
+
+    for (int i = 0; token2[i] != '\0'; i++) {
+        if (!isdigit(token2[i])) {
+            printf("Usage: ./tree-client <server_IP:server_port>\n");
+            free(rtree);
+            return NULL;
+        }
+    }
 
     rtree->server.sin_port = htons(atoi(token2));  // Porta TCP
 
