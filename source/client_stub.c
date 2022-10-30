@@ -25,7 +25,8 @@ struct rtree_t *rtree_connect(const char *address_port) {
     }
 
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
-    char *token1 = strtok(strdup(address_port), ":");
+    char *input = strdup(address_port);
+    char *token1 = strtok(input, ":");
     char *token2 = strtok(NULL, ":");
 
     for (int i = 0; token2[i] != '\0'; i++) {
@@ -48,7 +49,7 @@ struct rtree_t *rtree_connect(const char *address_port) {
         free(rtree);
         return NULL;
     }
-
+    free(input);
     return rtree;
 }
 

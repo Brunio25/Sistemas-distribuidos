@@ -79,7 +79,7 @@ int network_server_init(short port) {
  * - Enviar a resposta ao cliente usando a função network_send.
  */
 int network_main_loop(int listening_socket) {
-    struct sockaddr client;
+    struct sockaddr *client = malloc(sizeof(struct sockaddr));
     socklen_t size_client;
     int connsockfd;
     signal(SIGPIPE, SIG_IGN);
@@ -98,6 +98,7 @@ int network_main_loop(int listening_socket) {
         printf("Connection Terminated.\n");
         close(connsockfd);
     }
+    free(client);
     printf("error: %d", errno);  // TODO remove e include de errno.h
     return 0;
 }
@@ -166,7 +167,6 @@ int network_send(int client_socket, struct _MessageT *msg) {
         perror("write failed\n");
         return -1;
     }
-    // message_t__free_unpacked(msg, NULL);  mem leak
     free(buf);
 
     return 0;
