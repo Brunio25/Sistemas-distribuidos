@@ -115,16 +115,6 @@ int invoke(struct _MessageT *msg) {
             i++;
         }
 
-        printf(" ");
-
-        /* struct data_t *data = (struct data_t *)vid[0];
-        printf("data: %s\n", (char *)data->data);
-        int i = 0;
-        while (i < msg->n_values) {
-            printf("s: %s\n", (char *)vid[i]);
-            i++;
-        } */
-
     } else {
         msg->opcode = MESSAGE_T__OPCODE__OP_BAD;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;

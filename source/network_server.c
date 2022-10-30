@@ -19,13 +19,20 @@
 #include "../include/message-private.h"
 #include "../include/sdmessage.pb-c.h"
 
+
 int sockfd;
+
+void close_server(int sig) {
+    network_server_close();
+    exit(0);
+}
+
+
 /* Função para preparar uma socket de receção de pedidos de ligação
  * num determinado porto.
  * Retornar descritor do socket (OK) ou -1 (erro).
  */
 int network_server_init(short port) {
-    signal(SIGPIPE, SIG_IGN);
     struct sockaddr_in server;
     int opt = 1;
 
@@ -40,11 +47,6 @@ int network_server_init(short port) {
     }
 
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -80,12 +82,12 @@ int network_main_loop(int listening_socket) {
     struct sockaddr client;
     socklen_t size_client;
     int connsockfd;
-
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, close_server);
     printf("Awaiting connection...\n");
     while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
         printf("Connection Estabilished.\n");
         struct _MessageT *message = NULL;
-
         while ((message = network_receive(connsockfd)) != NULL) {
             if (invoke(message) == -1) {
                 printf("There Has Been an Unexpected Error!\n");
@@ -113,6 +115,14 @@ struct _MessageT *network_receive(int client_socket) {
     }
 
     lengthRec = ntohl(lengthRec);
+    
+    if(lengthRec < 0 ){
+        return NULL;
+    }
+
+    if(lengthRec > 1000){
+         return NULL;
+    }
 
     uint8_t buf[lengthRec];
     if (read_all(client_socket, buf, lengthRec) < 0) {

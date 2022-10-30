@@ -21,7 +21,7 @@ int main(int argc, char const *argv[]) {
             return -1;
         }
     }
-
+    
     int sockfd = network_server_init(atoi(argv[1]));
     network_main_loop(sockfd);
     network_server_close();

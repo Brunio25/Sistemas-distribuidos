@@ -3,14 +3,13 @@
 // Bruno Soares nº57100
 // Guilherme Marques nº55472
 
-#include "../include/client_stub.h"
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "../include/client_stub.h"
 #include "../include/client_stub-private.h"
 #include "../include/entry.h"
 #include "../include/network_client.h"

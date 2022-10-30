@@ -57,7 +57,7 @@ int network_connect(struct rtree_t *rtree) {
  */
 struct _MessageT *network_send_receive(struct rtree_t *rtree, struct _MessageT *msg) {
     int sockfd = rtree->sockfd;
-
+    signal(SIGPIPE, SIG_IGN);
     int len = message_t__get_packed_size(msg);
     uint8_t *sendBuf = malloc(len);
     if (sendBuf == NULL) {
