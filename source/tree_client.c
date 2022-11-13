@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
         } else if (strcmp(command, "get") == 0) {
             char *key = strtok(NULL, "\n");
             struct data_t *data = rtree_get(rtree, key);
-            if (data != NULL) {
+            if (data->data != NULL) {
                 printf("Fetched Data: %s\n", (char *)data->data);
             } else {
                 printf("There isn't a entry of key: %s on the Remote Tree.\n", key);

@@ -6,7 +6,7 @@
 #include "network_server.h"
 
 #include <arpa/inet.h>
-#include <errno.h>  // remove
+#include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
@@ -110,7 +110,7 @@ int network_main_loop(int listening_socket) {
  */
 struct _MessageT *network_receive(int client_socket) {
     int lengthRec;
-    if (read(client_socket, &lengthRec, sizeof(int)) < 0) {
+    if (read_all(client_socket, &lengthRec, sizeof(int)) < 0) {
         perror("read error\n");
         return NULL;
     }
@@ -158,7 +158,7 @@ int network_send(int client_socket, struct _MessageT *msg) {
 
     message_t__pack(msg, buf);
 
-    if ((write(client_socket, &len_network, sizeof(int))) < 0) {
+    if ((write_all(client_socket, &len_network, sizeof(int))) < 0) {
         perror("write failed\n");
         return -1;
     }

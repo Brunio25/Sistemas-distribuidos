@@ -115,7 +115,12 @@ struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         struct data_t *data = data_create(msgRec->value->datasize + 1);
-        memcpy(data->data, msgRec->value->data, data->datasize);
+
+        if(strlen(msgRec->value->data) <= 0){
+            data->data = NULL;
+        }else{
+            memcpy(data->data, msgRec->value->data, data->datasize);
+        }
         message_t__free_unpacked(msgRec,NULL);
         return data;
     }
