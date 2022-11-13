@@ -3,13 +3,13 @@
 // Bruno Soares nº57100
 // Guilherme Marques nº55472
 
-#include "../include/entry.h" 
+#include "entry.h" 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/data.h"
+#include "data.h"
 
 /* Função que cria uma entry, reservando a memória necessária para a
  * estrutura e inicializando os campos key e value, respetivamente, com a

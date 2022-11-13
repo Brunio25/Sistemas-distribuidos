@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/network_server.h"
+#include "network_server.h"
 
 int main(int argc, char const *argv[]) {
     if (argc != 2) {

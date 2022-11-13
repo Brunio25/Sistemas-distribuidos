@@ -30,7 +30,7 @@ CFLAGS = -g -Wall -I
 all: client-lib.o tree-client tree-server
 
 %.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) $(INC_DIR) -o $(OBJ_DIR)/$@ -c $<
+	$(CC) $(CFLAGS) $(INC_DIR) -o $(OBJ_DIR)/$@ -c -I include $<
 
 tree.o: $(OBJ_DIR)/tree.o
 

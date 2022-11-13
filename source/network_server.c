@@ -3,7 +3,7 @@
 #// Bruno Soares nº57100
 #// Guilherme Marques nº55472
 
-#include "../include/network_server.h"
+#include "network_server.h"
 
 #include <arpa/inet.h>
 #include <errno.h>  // remove
@@ -16,8 +16,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../include/message-private.h"
-#include "../include/sdmessage.pb-c.h"
+#include "message-private.h"
+#include "sdmessage.pb-c.h"
 
 
 int sockfd;

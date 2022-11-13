@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../include/message-private.h"
+#include "message-private.h"
 
 int write_all(int sock, uint8_t *buf, int len) {
     int bufsize = len;

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/data.h"
+#include "data.h"
 
 /* Função que cria um novo elemento de dados data_t, reservando a memória
  * necessária para armazenar os dados, especificada pelo parâmetro size 

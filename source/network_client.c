@@ -3,7 +3,7 @@
 // Bruno Soares nº57100
 // Guilherme Marques nº55472
 
-#include "../include/network_client.h"
+#include "network_client.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -15,8 +15,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../include/client_stub-private.h"
-#include "../include/message-private.h"
+#include "client_stub-private.h"
+#include "message-private.h"
 
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) a base da

@@ -3,13 +3,13 @@
 #// Bruno Soares nº57100
 #// Guilherme Marques nº55472
 
-#include "../include/tree_skel.h"
+#include "tree_skel.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/tree.h"
+#include "tree.h"
 
 struct tree_t *tree;
 

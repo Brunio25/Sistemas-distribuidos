@@ -9,10 +9,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../include/client_stub.h"
-#include "../include/client_stub-private.h"
-#include "../include/entry.h"
-#include "../include/network_client.h"
+#include "client_stub.h"
+#include "client_stub-private.h"
+#include "entry.h"
+#include "network_client.h"
 
 /* Função para estabelecer uma associação entre o cliente e o servidor,
  * em que address_port é uma string no formato <hostname>:<port>.
@@ -25,7 +25,8 @@ struct rtree_t *rtree_connect(const char *address_port) {
     }
 
     struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
-    char *token1 = strtok(address_port, ":");
+    char *localAddress_port = strdup(address_port);
+    char *token1 = strtok(localAddress_port, ":");
     char *token2 = strtok(NULL, ":");
 
     for (int i = 0; token2[i] != '\0'; i++) {
@@ -48,7 +49,7 @@ struct rtree_t *rtree_connect(const char *address_port) {
         free(rtree);
         return NULL;
     }
- 
+    free(localAddress_port);
     return rtree;
 }
 
@@ -57,6 +58,7 @@ struct rtree_t *rtree_connect(const char *address_port) {
  * Retorna 0 se tudo correr bem e -1 em caso de erro.
  */
 int rtree_disconnect(struct rtree_t *rtree) {
+
     network_close(rtree);
     free(rtree);
     return 0;
@@ -76,7 +78,7 @@ int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
     if (msg->entry == NULL) return -1;
 
     message_t__entry__init(msg->entry);
-    msg->entry->key = entry->key;
+    msg->entry->key = strdup(entry->key);
 
     msg->entry->value = (MessageT__Data *)malloc(sizeof(MessageT__Data));
     if (msg->entry->value == NULL) return -1;
@@ -84,16 +86,17 @@ int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
     message_t__data__init(msg->entry->value);
 
     msg->entry->value->datasize = entry->value->datasize;
-    msg->entry->value->data = entry->value->data;
+    msg->entry->value->data = strdup(entry->value->data);
     msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
     msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
 
     struct _MessageT *msgRec = network_send_receive(rtree, msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        message_t__free_unpacked(msgRec,NULL);
         return 0;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return -1;
 }
 
@@ -111,9 +114,12 @@ struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
-        return data_create2(msgRec->value->datasize, msgRec->value->data);
+        struct data_t *data = data_create(msgRec->value->datasize + 1);
+        memcpy(data->data, msgRec->value->data, data->datasize);
+        message_t__free_unpacked(msgRec,NULL);
+        return data;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return NULL;
 }
 
@@ -132,9 +138,10 @@ int rtree_del(struct rtree_t *rtree, char *key) {
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        message_t__free_unpacked(msgRec,NULL);
         return 0;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return -1;
 }
 
@@ -150,9 +157,10 @@ int rtree_size(struct rtree_t *rtree) {
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        message_t__free_unpacked(msgRec,NULL);
         return msgRec->result;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return -1;
 }
 
@@ -168,9 +176,10 @@ int rtree_height(struct rtree_t *rtree) {
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        message_t__free_unpacked(msgRec,NULL);
         return msgRec->result;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return -1;
 }
 
@@ -188,9 +197,18 @@ char **rtree_get_keys(struct rtree_t *rtree) {
 
     msgRec->keys[msgRec->n_keys] = NULL;
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
-        return msgRec->keys;
+        char **keys = malloc(sizeof(msgRec->keys));
+        int i=0;
+        while (msgRec->keys[i] != NULL) {
+            keys[i] = malloc(sizeof(msgRec->keys[i]));
+            strcpy(keys[i], msgRec->keys[i]);
+            i++;
+        }
+        keys[i] = NULL;
+        message_t__free_unpacked(msgRec,NULL);
+        return keys;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return NULL;
 }
 
@@ -208,8 +226,9 @@ void **rtree_get_values(struct rtree_t *rtree) {
 
     msgRec->values[msgRec->n_values] = NULL;
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+        message_t__free_unpacked(msgRec,NULL);
         return (void **)msgRec->values;
     }
-
+    message_t__free_unpacked(msgRec,NULL);
     return NULL;
 }

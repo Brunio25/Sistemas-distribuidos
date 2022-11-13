@@ -9,11 +9,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../include/client_stub-private.h"
-#include "../include/client_stub.h"
-#include "../include/data.h"
-#include "../include/sdmessage.pb-c.h"
-#include "../include/tree_client-private.h"
+#include "client_stub-private.h"
+#include "client_stub.h"
+#include "data.h"
+#include "sdmessage.pb-c.h"
+#include "tree_client-private.h"
+#include "tree.h"
 
 void printKeys(char **strs) {
     int i = 0;
@@ -103,7 +104,8 @@ int main(int argc, char const *argv[]) {
             } else {
                 printf("There isn't a entry of key: %s on the Remote Tree.\n", key);
             }
-
+            data_destroy(data);
+            
         } else if (strcmp(command, "del") == 0) {
             char *key = strtok(NULL, "\n");
             if (rtree_del(rtree, key) == -1) {
@@ -119,7 +121,9 @@ int main(int argc, char const *argv[]) {
             printf("Height: %d\n", rtree_height(rtree));
 
         } else if (strcmp(command, "getkeys") == 0) {
-            printKeys(rtree_get_keys(rtree));
+            char **keys = rtree_get_keys(rtree);
+            printKeys(keys);
+            
 
         } else if (strcmp(command, "getvalues") == 0) {
             printValues(rtree_get_values(rtree));
