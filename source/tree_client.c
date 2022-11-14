@@ -21,7 +21,7 @@ void printKeys(char **strs) {
 
     printf("Keys:");
     while (strs[i] != NULL) {
-        printf(" %s", (char *)strs[i]);
+        printf(" %s", strs[i]);
         i++;
     }
     printf("\n");
@@ -32,10 +32,34 @@ void printValues(void **values) {
 
     printf("Values:");
     while (values[i] != NULL) {
-        printf(" %s", (char *)((MessageT__Data *)values[i])->data);
+        printf(" %s", (char *)values[i]);
         i++;
     }
     printf("\n");
+}
+
+void free_keys(char **keys) {
+    int i = 0;
+    printf("%s\n",keys[1]);
+    while (keys[i] != NULL) {
+        printf("%p\n",keys[i]);
+        free(keys[i]);
+        i++;
+    }
+
+    free(keys);
+}
+
+
+void free_values(void **values) {
+    int i = 0;
+    while (values[i] != NULL) {
+        printf("%p\n",values[i]);
+        free(values[i]);
+        i++;
+    }
+
+    free(values);
 }
 
 void usage() {
@@ -122,12 +146,22 @@ int main(int argc, char const *argv[]) {
 
         } else if (strcmp(command, "getkeys") == 0) {
             char **keys = rtree_get_keys(rtree);
-            printKeys(keys);
+            if(keys == NULL){
+                printf("Tree is empty\n");
+            }else{
+                printKeys(keys);
+                //free_keys(keys);
+            }
             
-
         } else if (strcmp(command, "getvalues") == 0) {
-            printValues(rtree_get_values(rtree));
-
+            void **values = rtree_get_values(rtree);
+            if(values == NULL){
+                printf("Tree is empty\n");
+            }else {
+                printValues(values);
+                //free_values(values);
+            }
+            
         } else if (strcmp(command, "quit") == 0) {
             printf("Connection Will Now Be Terminated!\n");
             break;
