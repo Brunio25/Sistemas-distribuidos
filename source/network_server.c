@@ -46,7 +46,7 @@ int network_server_init(short port) {
         return -1;
     }
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -80,12 +80,12 @@ int network_server_init(short port) {
  */
 int network_main_loop(int listening_socket) {
     struct sockaddr *client = malloc(sizeof(struct sockaddr));
-    socklen_t size_client;
+    socklen_t *size_client = malloc(sizeof(socklen_t));
     int connsockfd;
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, close_server);
     printf("Awaiting connection...\n");
-    while ((connsockfd = accept(listening_socket, (struct sockaddr *)&client, &size_client)) != -1) {
+    while ((connsockfd = accept(listening_socket, (struct sockaddr *)client, size_client)) != -1) {
         printf("Connection Estabilished.\n");
         struct _MessageT *message = NULL;
         while ((message = network_receive(connsockfd)) != NULL) {
