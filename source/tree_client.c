@@ -40,9 +40,7 @@ void printValues(void **values) {
 
 void free_keys(char **keys) {
     int i = 0;
-    printf("%s\n",keys[1]);
     while (keys[i] != NULL) {
-        printf("%p\n",keys[i]);
         free(keys[i]);
         i++;
     }
@@ -150,7 +148,7 @@ int main(int argc, char const *argv[]) {
                 printf("Tree is empty\n");
             }else{
                 printKeys(keys);
-                //free_keys(keys);
+                free_keys(keys);
             }
             
         } else if (strcmp(command, "getvalues") == 0) {

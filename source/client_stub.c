@@ -211,7 +211,7 @@ char **rtree_get_keys(struct rtree_t *rtree) {
     
     
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR && msgRec->keys != NULL) {
-        char **keys = malloc(sizeof(msgRec->keys));
+        char **keys = malloc(sizeof(msgRec->keys)+1);
         
         int i=0;
         while (i < msgRec->n_keys) {
@@ -238,7 +238,7 @@ void **rtree_get_values(struct rtree_t *rtree) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
-    void **values = malloc(sizeof(msgRec->values));
+    void **values = malloc(sizeof(msgRec->values)+1);
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR && msgRec->values != NULL ) {
         int i=0;
         while (i < msgRec->n_values) {
