@@ -110,7 +110,8 @@ int invoke(struct _MessageT *msg) {
             msg->values[i] = (MessageT__Data *)malloc(sizeof(MessageT__Data));
             message_t__data__init(msg->values[i]);
 
-            msg->values[i]->data = (char *)values[i]->data;
+            msg->values[i]->data = values[i]->data;  //bug ? put a b + put a b = merda
+            //printf("msg: %s, func: %s\n",msg->values[i]->data,(char *)values[i]->data);
             msg->values[i]->datasize = values[i]->datasize;
             i++;
         }

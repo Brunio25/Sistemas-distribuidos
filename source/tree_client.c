@@ -52,7 +52,6 @@ void free_keys(char **keys) {
 void free_values(void **values) {
     int i = 0;
     while (values[i] != NULL) {
-        printf("%p\n",values[i]);
         free(values[i]);
         i++;
     }
@@ -157,7 +156,7 @@ int main(int argc, char const *argv[]) {
                 printf("Tree is empty\n");
             }else {
                 printValues(values);
-                //free_values(values);
+                free_values(values);
             }
             
         } else if (strcmp(command, "quit") == 0) {
