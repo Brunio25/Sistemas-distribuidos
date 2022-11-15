@@ -3,6 +3,8 @@
 #// Bruno Soares nº57100
 #// Guilherme Marques nº55472
 
+#define NFDESC 10
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -79,28 +81,62 @@ int network_server_init(short port) {
  * - Esperar a resposta do skeleton;
  * - Enviar a resposta ao cliente usando a função network_send.
  */
+
 int network_main_loop(int listening_socket) {
     struct sockaddr *client = malloc(sizeof(struct sockaddr));
     socklen_t *size_client = malloc(sizeof(socklen_t));
-    int connsockfd;
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, close_server);
     printf("Awaiting connection...\n");
-    while ((connsockfd = accept(listening_socket, (struct sockaddr *)client, size_client)) != -1) {
-        printf("Connection Estabilished.\n");
-        struct _MessageT *message = NULL;
-        while ((message = network_receive(connsockfd)) != NULL) {
-            if (invoke(message) == -1) {
-                printf("There Has Been an Unexpected Error!\n");
-            }
-
-            network_send(connsockfd, message);
-        }
-        printf("Connection Terminated.\n");
-        close(connsockfd);
+    struct pollfd desc_set[NFDESC];
+    int i,nfds,kfds;
+    for (i = 0; i < NFDESC; i++){
+        desc_set[i].fd = -1;
     }
+    desc_set[0].fd = sockfd;  // Vamos detetar eventos na welcoming socket
+    desc_set[0].events = POLLIN;
+
+    nfds = 1;
+
+    while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
+
+        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)){  // Pedido na listening socket ?
+            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0){ // Ligacao feita ?
+                desc_set[nfds].events = POLLIN; // Vamos esperar dados nesta socket
+                nfds++;
+            }
+            printf("Connection accepted\n");
+        }
+        for (i = 1; i < nfds; i++){ 
+
+            if (desc_set[i].revents & POLLIN) { // Dados para ler ?
+                struct _MessageT *message = NULL;
+                
+
+                if((message = network_receive(desc_set[i].fd)) == NULL){
+                    printf("Connection terminated\n");
+                    close(desc_set[i].fd);
+                    desc_set[i].fd = -1;
+                    continue;
+                }
+
+                if (invoke(message) == -1) {
+                    printf("There Has Been an Unexpected Error!\n");
+                }
+               
+                //printf("Recebido do cliente %d:\n", i);               
+                
+                if (network_send(desc_set[i].fd, message) < 0){
+                    printf("Connection terminated\n");
+                    close(desc_set[i].fd);
+                    desc_set[i].fd = -1;
+                    continue;
+                }
+            }
+        }
+    }
+    free(size_client);
     free(client);
-    printf("error: %d", errno);  // TODO remove e include de errno.h
     return 0;
 }
 

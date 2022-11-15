@@ -12,6 +12,7 @@
 #include "tree.h"
 
 struct tree_t *tree;
+int last_assigned;
 
 /* Inicia o skeleton da árvore.
  * O main() do servidor deve chamar esta função antes de poder usar a
@@ -24,7 +25,7 @@ int tree_skel_init() {
     if (tree == NULL) {
         return -1;
     }
-
+    last_assigned = 1;
     return 0;
 }
 
@@ -119,8 +120,11 @@ int invoke(struct _MessageT *msg) {
     } else {
         msg->opcode = MESSAGE_T__OPCODE__OP_BAD;
         msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+        //last_assigned++;                                          em caso de erro tmb é suposto?
         return -1;
     }
 
+
+    last_assigned++;
     return 0;
 }

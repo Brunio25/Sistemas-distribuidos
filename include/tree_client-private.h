@@ -15,4 +15,10 @@ void printValues(void **values);
 //prints the commands the program accepts
 void usage();
 
+//destroys an array of keys
+void free_keys(char **keys);
+
+//destroys an array of values
+void free_values(void **values);
+
 #endif
