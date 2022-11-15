@@ -96,10 +96,11 @@ int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
 
     struct _MessageT *msgRec = network_send_receive(rtree, msg);
 
-    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    if (msgRec->opcode == MESSAGE_T__OPCODE__OP_PUT + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
+        int waitNum = msgRec->result;
         message_t__free_unpacked(msg,NULL);
         message_t__free_unpacked(msgRec,NULL);
-        return 0;
+        return waitNum;
     }
     message_t__free_unpacked(msg,NULL);
     message_t__free_unpacked(msgRec,NULL);
@@ -149,9 +150,10 @@ int rtree_del(struct rtree_t *rtree, char *key) {
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
 
-    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
+    if (msgRec->opcode == MESSAGE_T__OPCODE__OP_DEL + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
+        int waitNum = msgRec->result;
         message_t__free_unpacked(msgRec,NULL);
-        return 0;
+        return waitNum;
     }
     message_t__free_unpacked(msgRec,NULL);
     return -1;
@@ -252,4 +254,23 @@ void **rtree_get_values(struct rtree_t *rtree) {
     }
     message_t__free_unpacked(msgRec,NULL);
     return NULL;
+}
+
+/* Verifica se a operação identificada por op_n foi executada.
+*/
+int rtree_verify(struct rtree_t *rtree, int op_n){
+    struct _MessageT msg;
+    message_t__init(&msg);
+
+    msg.opcode = MESSAGE_T__OPCODE__OP_VERIFY;
+    msg.c_type = MESSAGE_T__C_TYPE__CT_RESULT;
+
+    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_VERIFY + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
+        int result = msgRec->result;
+        message_t__free_unpacked(msgRec,NULL);
+        return result;
+    }
+    message_t__free_unpacked(msgRec,NULL);
+    return -1;
 }

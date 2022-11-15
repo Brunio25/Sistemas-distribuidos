@@ -27,6 +27,8 @@ client-lib = client_stub.o network_client.o data.o entry.o
 
 CFLAGS = -g -Wall -I
 
+LIBS= -lpthread
+
 all: client-lib.o tree-client tree-server
 
 %.o: $(SRC_DIR)/%.c
@@ -41,7 +43,7 @@ tree-client: $(tree-client)
 	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 tree-server: $(tree-server)
-	$(CC) $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
+	$(CC) $(addprefix $(OBJ_DIR)/,$^) $(LIBS) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 
 clean:

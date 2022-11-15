@@ -111,11 +111,11 @@ int main(int argc, char const *argv[]) {
             char *key = strtok(NULL, " ");
             char *data = strtok(NULL, " ");
 
-            int bool = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));
-            if (bool == -1) {
+            int result = rtree_put(rtree, entry_create(key, data_create2(strlen(data), data)));
+            if (result == -1) {
                 printf("Insertion on Remote Tree Failed.\n");
             } else {
-                printf("Insertion on Remote Tree Successful!\n");
+                printf("The Operation Number is %d\n",result);
             }
         } else if (strcmp(command, "get") == 0) {
             char *key = strtok(NULL, "\n");
@@ -129,10 +129,11 @@ int main(int argc, char const *argv[]) {
             
         } else if (strcmp(command, "del") == 0) {
             char *key = strtok(NULL, "\n");
-            if (rtree_del(rtree, key) == -1) {
+            int result = rtree_del(rtree, key);
+            if (result == -1) {
                 printf("Deletion on Remote Tree Failed.\n");
             } else {
-                printf("Deletion from Remote Tree Successful!\n");
+                printf("The Operation Number is %d\n",result);
             }
 
         } else if (strcmp(command, "size") == 0) {
@@ -162,6 +163,16 @@ int main(int argc, char const *argv[]) {
         } else if (strcmp(command, "quit") == 0) {
             printf("Connection Will Now Be Terminated!\n");
             break;
+        } else if(strcmp(command, "verify") == 0) {
+            char *opcode = strtok(NULL, " ");
+            int result = rtree_verify(rtree, atoi(opcode));
+            if(result == 0){
+                printf("The operation is waiting to be executed\n");
+            }else if(result == 1){
+                printf("The operation has been executed\n");
+            }else{
+                printf("Something went wrong\n");
+            }
         } else {
             printf("Invalid Command\n");
             usage();

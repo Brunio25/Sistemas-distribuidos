@@ -25,6 +25,7 @@
 
 int sockfd;
 
+
 void close_server(int sig) {
     network_server_close();
     exit(0);
@@ -39,7 +40,7 @@ int network_server_init(short port) {
     struct sockaddr_in server;
     int opt = 1;
 
-    if (tree_skel_init() == -1) {
+    if (tree_skel_init( 5 ) == -1) {                        //numero de threads secundarias
         return -1;
     }
 
@@ -93,23 +94,23 @@ int network_main_loop(int listening_socket) {
     for (i = 0; i < NFDESC; i++){
         desc_set[i].fd = -1;
     }
-    desc_set[0].fd = sockfd;  // Vamos detetar eventos na welcoming socket
+    desc_set[0].fd = sockfd;  
     desc_set[0].events = POLLIN;
 
     nfds = 1;
 
     while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
 
-        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)){  // Pedido na listening socket ?
-            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0){ // Ligacao feita ?
-                desc_set[nfds].events = POLLIN; // Vamos esperar dados nesta socket
+        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)){  
+            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0){ 
+                desc_set[nfds].events = POLLIN; 
                 nfds++;
             }
             printf("Connection accepted\n");
         }
         for (i = 1; i < nfds; i++){ 
 
-            if (desc_set[i].revents & POLLIN) { // Dados para ler ?
+            if (desc_set[i].revents & POLLIN) { 
                 struct _MessageT *message = NULL;
                 
 
