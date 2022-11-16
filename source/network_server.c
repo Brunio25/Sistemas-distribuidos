@@ -5,9 +5,13 @@
 
 #define NFDESC 10
 
+#include "network_server.h"
+
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,22 +19,16 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <poll.h>
-#include <fcntl.h>
 
-#include "network_server.h"
 #include "message-private.h"
 #include "sdmessage.pb-c.h"
 
-
 int sockfd;
-
 
 void close_server(int sig) {
     network_server_close();
     exit(0);
 }
-
 
 /* Função para preparar uma socket de receção de pedidos de ligação
  * num determinado porto.
@@ -40,7 +38,7 @@ int network_server_init(short port) {
     struct sockaddr_in server;
     int opt = 1;
 
-    if (tree_skel_init( 5 ) == -1) {                        //numero de threads secundarias
+    if (tree_skel_init(5) == -1) {  // numero de threads secundarias
         return -1;
     }
 
@@ -66,7 +64,7 @@ int network_server_init(short port) {
     }
 
     // Faz listen
-    if (listen(sockfd, 0) < 0) {
+    if (listen(sockfd, 0) < 0) {  // TODO arg N
         perror("Erro ao executar listen");
         close(sockfd);
         return -1;
@@ -90,31 +88,28 @@ int network_main_loop(int listening_socket) {
     signal(SIGINT, close_server);
     printf("Awaiting connection...\n");
     struct pollfd desc_set[NFDESC];
-    int i,nfds,kfds;
-    for (i = 0; i < NFDESC; i++){
+    int i, nfds, kfds;
+    for (i = 0; i < NFDESC; i++) {
         desc_set[i].fd = -1;
     }
-    desc_set[0].fd = sockfd;  
+    desc_set[0].fd = sockfd;
     desc_set[0].events = POLLIN;
 
     nfds = 1;
 
     while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
-
-        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)){  
-            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0){ 
-                desc_set[nfds].events = POLLIN; 
+        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
+            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
+                desc_set[nfds].events = POLLIN;
                 nfds++;
             }
             printf("Connection accepted\n");
         }
-        for (i = 1; i < nfds; i++){ 
-
-            if (desc_set[i].revents & POLLIN) { 
+        for (i = 1; i < nfds; i++) {
+            if (desc_set[i].revents & POLLIN) {
                 struct _MessageT *message = NULL;
-                
 
-                if((message = network_receive(desc_set[i].fd)) == NULL){
+                if ((message = network_receive(desc_set[i].fd)) == NULL) {
                     printf("Connection terminated\n");
                     close(desc_set[i].fd);
                     desc_set[i].fd = -1;
@@ -124,10 +119,10 @@ int network_main_loop(int listening_socket) {
                 if (invoke(message) == -1) {
                     printf("There Has Been an Unexpected Error!\n");
                 }
-               
-                //printf("Recebido do cliente %d:\n", i);               
-                
-                if (network_send(desc_set[i].fd, message) < 0){
+
+                // printf("Recebido do cliente %d:\n", i);
+
+                if (network_send(desc_set[i].fd, message) < 0) {
                     printf("Connection terminated\n");
                     close(desc_set[i].fd);
                     desc_set[i].fd = -1;
@@ -154,13 +149,13 @@ struct _MessageT *network_receive(int client_socket) {
     }
 
     lengthRec = ntohl(lengthRec);
-    
-    if(lengthRec < 0 ){
+
+    if (lengthRec < 0) {
         return NULL;
     }
 
-    if(lengthRec > 1000){
-         return NULL;
+    if (lengthRec > 1000) {
+        return NULL;
     }
 
     uint8_t buf[lengthRec];
