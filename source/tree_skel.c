@@ -19,11 +19,12 @@ struct op_proc operations;
 int last_assigned;
 int maxNumOps = 40;
 pthread_t *threadids;
-pthread_mutex_t queue_lock, tree_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t tree_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t queue_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t queue_not_empty = PTHREAD_COND_INITIALIZER;
-int op_count;
 int NumThreads;
 struct request_t *queue_head;
+int close = 0;
 
 /* Inicia o skeleton da árvore.
  * O main() do servidor deve chamar esta função antes de poder usar a
@@ -41,12 +42,13 @@ int tree_skel_init(int N) {
     }
 
     operations.in_progress = calloc(maxNumOps, sizeof(int));
+    operations.max_proc = 0;
     queue_head = NULL;
 
     int i;
     threadids = malloc(sizeof(pthread_t) * NumThreads);
     for (i = 0; i < NumThreads; i++) {
-        pthread_create(&threadids[i], NULL, &process_request, (void *)&queue_head);
+        pthread_create(&threadids[i], NULL, &process_request, queue_head);
     }
 
     last_assigned = 1;
@@ -58,8 +60,11 @@ int tree_skel_init(int N) {
  */
 void tree_skel_destroy() {
     tree_destroy(tree);
+    close = 1;
     int i = 0;
     for (i = 0; i < NumThreads; i++) {
+        pthread_mutex_unlock(&queue_lock);
+        pthread_cond_signal(&queue_not_empty);
         pthread_exit(&threadids[i]);
     }
     free(threadids);
@@ -75,17 +80,23 @@ int verify(int op_n) {
 /* Função da thread secundária que vai processar pedidos de escrita.
  */
 void *process_request(void *params) {
-    while (1) {
-        pthread_mutex_lock(&queue_lock);
 
-        while (queue_head == NULL) {  // TODO if em vez de while?
+    while (close == 0) {
+        pthread_mutex_lock(&queue_lock);
+        if (queue_head == NULL) {  // TODO if em vez de while?
             pthread_cond_wait(&queue_not_empty, &queue_lock);
         }
-
+        
         struct request_t *request = queue_head;
 
         exec_write_operation(request);
-        operations.max_proc = request->op_n;  // max proc não estava a ser atualizado
+        int i;
+        for (i = 0; i < maxNumOps; i++) {
+            if (operations.in_progress[i] == request->op_n) {
+                operations.max_proc = request->op_n;
+                operations.in_progress[i] = 0;
+            }
+        }
 
         if (request->next_request == NULL) {
             queue_head = NULL;
@@ -124,7 +135,6 @@ int invoke(struct _MessageT *msg) {
     } else if (op == MESSAGE_T__OPCODE__OP_DEL && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
-        tree_del(tree, msg->key);
         msg->result = last_assigned;
         int i;
         for (i = 0; i < maxNumOps; i++) {
@@ -132,17 +142,16 @@ int invoke(struct _MessageT *msg) {
                 operations.in_progress[i] = last_assigned;
             }
         }
-        last_assigned++;
+        
         request = (struct request_t *)malloc(sizeof(struct request_t));
-        request->op_n = op_count;
+        request->op_n = last_assigned;
         request->op = 0;
         request->key = msg->key;
         request->data = NULL;
         request->next_request = NULL;
         request->message = msg;
-
+        last_assigned++;
         fill_buffer(request);
-        free(request);
 
     } else if (op == MESSAGE_T__OPCODE__OP_GET && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
         struct data_t *temp = tree_get(tree, msg->key);
@@ -161,16 +170,6 @@ int invoke(struct _MessageT *msg) {
     } else if (op == MESSAGE_T__OPCODE__OP_PUT && msg->c_type == MESSAGE_T__C_TYPE__CT_ENTRY) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
-        struct data_t *data = data_create2(msg->entry->value->datasize, msg->entry->value->data);
-        if (data == NULL) {
-            msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
-            return -1;
-        }
-
-        if ((tree_put(tree, msg->entry->key, data)) == -1) {
-            msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
-            return -1;
-        }
         msg->result = last_assigned;
         int i;
         for (i = 0; i < maxNumOps; i++) {
@@ -178,18 +177,17 @@ int invoke(struct _MessageT *msg) {
                 operations.in_progress[i] = last_assigned;
             }
         }
-        last_assigned++;
+        
         request = (struct request_t *)malloc(sizeof(struct request_t));
-        request->op_n = op_count;
+        request->op_n = last_assigned;
         request->op = 1;
-        request->key = msg->key;
+        request->key = msg->entry->key;
         request->data = data_create2(msg->entry->value->datasize, msg->entry->value->data);
         request->next_request = NULL;
         request->message = msg;
+        last_assigned++;
+        fill_buffer(request); 
 
-        fill_buffer(request);
-        data_destroy(request->data);  // destruição de data temp
-        free(request);
     } else if (op == MESSAGE_T__OPCODE__OP_GETKEYS && msg->c_type == MESSAGE_T__C_TYPE__CT_NONE) {
         msg->opcode = op + 1;
         msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
@@ -209,8 +207,7 @@ int invoke(struct _MessageT *msg) {
             msg->values[i] = (MessageT__Data *)malloc(sizeof(MessageT__Data));
             message_t__data__init(msg->values[i]);
 
-            msg->values[i]->data = values[i]->data;  // bug ? put a b + put a b = merda
-            // printf("msg: %s, func: %s\n",msg->values[i]->data,(char *)values[i]->data);
+            msg->values[i]->data = values[i]->data;
             msg->values[i]->datasize = values[i]->datasize;
             i++;
         }
@@ -234,7 +231,7 @@ int invoke(struct _MessageT *msg) {
 }
 
 /* Função que adiciona ao buffer uma task
- * Do genero produtor de tasks para o conceito de Produtor/Consumidor
+ * Do genero produtor de requests para o conceito de Produtor/Consumidor
  */
 void fill_buffer(struct request_t *request) {
     pthread_mutex_lock(&queue_lock);
@@ -261,18 +258,10 @@ int exec_write_operation(struct request_t *request) {
     if (request->op == 1) {
         int value = tree_put(tree, request->key, request->data);
         if (value == -1) {
-            request->message->opcode = MESSAGE_T__OPCODE__OP_ERROR;
-            request->message->c_type = MESSAGE_T__C_TYPE__CT_NONE;
-            op_count++;
-
             pthread_mutex_unlock(&tree_lock);
+            perror("Tree Put Error.\n");
             return value;
         }
-
-        request->message->opcode = MESSAGE_T__OPCODE__OP_PUT + 1;
-        request->message->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
-        request->message->result = last_assigned;
-        op_count++;
 
         pthread_mutex_unlock(&tree_lock);
         return value;
@@ -280,18 +269,11 @@ int exec_write_operation(struct request_t *request) {
     } else if (request->op == 0) {  // substituir por else?
         int value = tree_del(tree, request->key);
 
-        if (value == -1) {
-            request->message->opcode = MESSAGE_T__OPCODE__OP_ERROR;
-            request->message->c_type = MESSAGE_T__C_TYPE__CT_NONE;
-            op_count++;
+        if (value == -1) { 
             pthread_mutex_unlock(&tree_lock);
             return value;
         }
-        request->message->opcode = MESSAGE_T__OPCODE__OP_DEL + 1;
-        request->message->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
-        request->message->result = last_assigned;
-        op_count++;
-
+        
         pthread_mutex_unlock(&tree_lock);
         return value;
     }

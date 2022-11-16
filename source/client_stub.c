@@ -265,7 +265,8 @@ int rtree_verify(struct rtree_t *rtree, int op_n) {
     msg.result = op_n;
 
     struct _MessageT *msgRec = network_send_receive(rtree, &msg);
-    if (msgRec->opcode != MESSAGE_T__OPCODE__OP_VERIFY + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
+
+    if (msgRec->opcode == MESSAGE_T__OPCODE__OP_VERIFY + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
         int result = msgRec->result;
         message_t__free_unpacked(msgRec, NULL);
         return result;

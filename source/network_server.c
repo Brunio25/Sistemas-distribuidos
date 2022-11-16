@@ -24,10 +24,12 @@
 #include "sdmessage.pb-c.h"
 
 int sockfd;
+int flag = 0;
 
 void close_server(int sig) {
-    network_server_close();
-    exit(0);
+    flag = 1;
+    /* network_server_close();
+    exit(0); */
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação
@@ -98,6 +100,17 @@ int network_main_loop(int listening_socket) {
     nfds = 1;
 
     while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
+
+        /* if(flag == 1){
+            int i;
+            for(i = 1; i < nfds; i++){
+                if(desc_set[i].fd != -1){
+                    close(desc_set[i].fd);
+                }
+            }
+            break;
+        } */
+
         if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
             if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
                 desc_set[nfds].events = POLLIN;
@@ -111,7 +124,7 @@ int network_main_loop(int listening_socket) {
 
                 if ((message = network_receive(desc_set[i].fd)) == NULL) {
                     printf("Connection terminated\n");
-                    close(desc_set[i].fd);
+                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada
                     desc_set[i].fd = -1;
                     continue;
                 }
@@ -124,7 +137,7 @@ int network_main_loop(int listening_socket) {
 
                 if (network_send(desc_set[i].fd, message) < 0) {
                     printf("Connection terminated\n");
-                    close(desc_set[i].fd);
+                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada
                     desc_set[i].fd = -1;
                     continue;
                 }
