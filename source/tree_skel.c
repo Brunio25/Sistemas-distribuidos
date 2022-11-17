@@ -63,10 +63,11 @@ void tree_skel_destroy() {
     close = 1;
     int i = 0;
     for (i = 0; i < NumThreads; i++) {
-        pthread_mutex_unlock(&queue_lock);
         pthread_cond_signal(&queue_not_empty);
-        pthread_exit(&threadids[i]);
+        pthread_join(threadids[i],NULL);
     }
+    printf("cheguei\n");
+    free(operations.in_progress);
     free(threadids);
     return;
 }
@@ -86,6 +87,8 @@ void *process_request(void *params) {
         if (queue_head == NULL) {  // TODO if em vez de while?
             pthread_cond_wait(&queue_not_empty, &queue_lock);
         }
+        if (close != 0)
+            exit(1);
         
         struct request_t *request = queue_head;
 

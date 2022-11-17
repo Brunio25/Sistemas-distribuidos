@@ -26,8 +26,9 @@
 int sockfd;
 
 void close_server(int sig) {
-    network_server_close();
-    exit(0);
+    
+    network_server_close(); 
+    exit(0); 
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação
@@ -81,7 +82,10 @@ int network_main_loop(int listening_socket) {
     struct sockaddr *client = malloc(sizeof(struct sockaddr));
     socklen_t *size_client = malloc(sizeof(socklen_t));
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGINT, close_server);
+    struct sigaction psa;
+    psa.sa_handler = close_server;
+    sigaction(SIGINT, &psa, NULL);
+
     printf("Awaiting connection...\n");
     struct pollfd desc_set[NFDESC];
     int i, kfds,nfds;
@@ -93,7 +97,7 @@ int network_main_loop(int listening_socket) {
 
     nfds = 1;
 
-    while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
+    while ((kfds = poll(desc_set, nfds, -1)) >= 0) {
 
         if (kfds > 0){
         
