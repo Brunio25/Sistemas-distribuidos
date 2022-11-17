@@ -38,10 +38,6 @@ int network_server_init(short port) {
     struct sockaddr_in server;
     int opt = 1;
 
-    if (tree_skel_init(5) == -1) {                  // numero de threads secundarias
-        return -1;
-    }
-
     // Cria socket TCP
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Erro ao criar socket");
@@ -98,49 +94,43 @@ int network_main_loop(int listening_socket) {
     nfds = 1;
 
     while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
+
+        if (kfds > 0){
         
-        if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
-            if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
-                desc_set[nfds].events = POLLIN;
-                nfds++;
+            if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
+                if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
+                    desc_set[nfds].events = POLLIN;
+                    nfds++;
+                    printf("Connection accepted\n");
+                }
             }
-            printf("Connection accepted\n");
-        }
-        for (i = 1; i < nfds; i++) {
-            if (desc_set[i].revents & POLLIN) {
-                struct _MessageT *message = NULL;
+            for (i = 1; i < nfds; i++) {
+                if (desc_set[i].revents & POLLIN) {
+                    struct _MessageT *message = NULL;
 
-                if ((message = network_receive(desc_set[i].fd)) == NULL) {
-                    printf("Connection terminated\n");
-                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada pelo cliente?
-                    desc_set[i].fd = -1;
-                    continue;
-                }
+                    if ((message = network_receive(desc_set[i].fd)) == NULL) {
+                        printf("Connection terminated\n");
+                        //close(desc_set[i].fd);                                //a ligacao ja foi fechada pelo cliente?
+                        desc_set[i].fd = -1;
+                        continue;
+                    }
 
-                if (invoke(message) == -1) {
-                    printf("There Has Been an Unexpected Error!\n");
-                }
+                    if (invoke(message) == -1) {
+                        printf("There Has Been an Unexpected Error!\n");
+                    }
 
-                // printf("Recebido do cliente %d:\n", i);
 
-                if (network_send(desc_set[i].fd, message) < 0) {
-                    printf("Connection terminated\n");
-                    //close(desc_set[i].fd);                               //a ligacao ja foi fechada pelo cliente?
-                    desc_set[i].fd = -1;
-                    continue;
+                    if (network_send(desc_set[i].fd, message) < 0) {
+                        printf("Connection terminated\n");
+                        //close(desc_set[i].fd);                               //a ligacao ja foi fechada pelo cliente?
+                        desc_set[i].fd = -1;
+                        continue;
+                    }
                 }
             }
         }
     }
-
-    
-    for(i = 1; i < nfds; i++){
-        if(desc_set[i].fd != -1){
-            close(desc_set[i].fd);
-        }
-    }
         
-    
     free(size_client);
     free(client);
     return 0;

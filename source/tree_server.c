@@ -10,8 +10,8 @@
 #include "network_server.h"
 
 int main(int argc, char const *argv[]) {
-    if (argc != 2) {
-        printf("Usage: ./server <server_port>\n");
+    if (argc != 3) {
+        printf("Usage: ./server <server_port> <N>\n");
         return -1;
     }
 
@@ -24,6 +24,9 @@ int main(int argc, char const *argv[]) {
     }
     
     int sockfd = network_server_init(atoi(argv[1]));
+    if (tree_skel_init(atoi(argv[2])) == -1) {                  // numero de threads secundarias
+        return -1;
+    } 
     network_main_loop(sockfd);
     network_server_close();
 
