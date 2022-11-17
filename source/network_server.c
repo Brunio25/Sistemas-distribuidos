@@ -24,11 +24,10 @@
 #include "sdmessage.pb-c.h"
 
 int sockfd;
+int flag = 0;
 
 void close_server(int sig) {
-    
-    network_server_close(); 
-    exit(0); 
+    flag = 1;
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação
@@ -82,6 +81,7 @@ int network_main_loop(int listening_socket) {
     struct sockaddr *client = malloc(sizeof(struct sockaddr));
     socklen_t *size_client = malloc(sizeof(socklen_t));
     signal(SIGPIPE, SIG_IGN);
+    
     struct sigaction psa;
     psa.sa_handler = close_server;
     sigaction(SIGINT, &psa, NULL);
@@ -97,9 +97,9 @@ int network_main_loop(int listening_socket) {
 
     nfds = 1;
 
-    while ((kfds = poll(desc_set, nfds, -1)) >= 0) {
+    while (flag == 0 &&(kfds = poll(desc_set, nfds, -1)) >= 0) {
 
-        if (kfds > 0){
+        if (kfds > 0 && flag == 0){
         
             if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
                 if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
@@ -114,7 +114,6 @@ int network_main_loop(int listening_socket) {
 
                     if ((message = network_receive(desc_set[i].fd)) == NULL) {
                         printf("Connection terminated\n");
-                        //close(desc_set[i].fd);                                //a ligacao ja foi fechada pelo cliente?
                         desc_set[i].fd = -1;
                         continue;
                     }
@@ -126,7 +125,6 @@ int network_main_loop(int listening_socket) {
 
                     if (network_send(desc_set[i].fd, message) < 0) {
                         printf("Connection terminated\n");
-                        //close(desc_set[i].fd);                               //a ligacao ja foi fechada pelo cliente?
                         desc_set[i].fd = -1;
                         continue;
                     }
@@ -134,9 +132,10 @@ int network_main_loop(int listening_socket) {
             }
         }
     }
-        
     free(size_client);
     free(client);
+    network_server_close(); 
+    exit(0);
     return 0;
 }
 
@@ -197,14 +196,17 @@ int network_send(int client_socket, struct _MessageT *msg) {
 
     if ((write_all(client_socket, &len_network, sizeof(int))) < 0) {
         perror("write failed\n");
+        free(buf);
         return -1;
     }
 
     if ((write_all(client_socket, buf, len)) < 0) {
         perror("write failed\n");
+        free(buf);
         return -1;
     }
     free(buf);
+    message_t__free_unpacked(msg,NULL);
 
     return 0;
 }
@@ -214,6 +216,6 @@ int network_send(int client_socket, struct _MessageT *msg) {
  */
 int network_server_close() {
     tree_skel_destroy();
-    close(sockfd);
+    //close(sockfd);
     return 0;
 }
