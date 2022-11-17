@@ -216,6 +216,5 @@ int network_send(int client_socket, struct _MessageT *msg) {
  */
 int network_server_close() {
     tree_skel_destroy();
-    //close(sockfd);
     return 0;
 }

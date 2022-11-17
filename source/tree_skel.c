@@ -153,7 +153,6 @@ int invoke(struct _MessageT *msg) {
         request->next_request = NULL;
         request->message = msg;
         last_assigned++;
-        printf("%ld\n",sizeof(request));
         fill_buffer(request);
 
     } else if (op == MESSAGE_T__OPCODE__OP_GET && msg->c_type == MESSAGE_T__C_TYPE__CT_KEY) {
@@ -168,7 +167,7 @@ int invoke(struct _MessageT *msg) {
         } else {
             msg->value->datasize = temp->datasize;
             msg->value->data = malloc(msg->value->datasize);
-            strcpy(msg->value->data,temp->data);
+            strcpy(msg->value->data,(char *)temp->data);
         }
         data_destroy(temp);
 
@@ -186,8 +185,8 @@ int invoke(struct _MessageT *msg) {
         request = (struct request_t *)malloc(sizeof(struct request_t));
         request->op_n = last_assigned;
         request->op = 1;
-        request->key = msg->entry->key;
-        request->data = data_create2(msg->entry->value->datasize,msg->entry->value->data);
+        request->key = strdup(msg->entry->key);
+        request->data = data_create2(msg->entry->value->datasize,strdup(msg->entry->value->data));
         request->next_request = NULL;
         request->message = msg;
         last_assigned++;
