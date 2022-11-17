@@ -128,6 +128,7 @@ int network_main_loop(int listening_socket) {
                         desc_set[i].fd = -1;
                         continue;
                     }
+                    //message_t__free_unpacked(message,NULL);                    //da mem leak mas se n meter da shit
                 }
             }
         }
@@ -206,7 +207,6 @@ int network_send(int client_socket, struct _MessageT *msg) {
         return -1;
     }
     free(buf);
-    message_t__free_unpacked(msg,NULL);
 
     return 0;
 }
