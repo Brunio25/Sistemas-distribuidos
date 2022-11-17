@@ -24,12 +24,10 @@
 #include "sdmessage.pb-c.h"
 
 int sockfd;
-int flag = 0;
 
 void close_server(int sig) {
-    flag = 1;
-    /* network_server_close();
-    exit(0); */
+    network_server_close();
+    exit(0);
 }
 
 /* Função para preparar uma socket de receção de pedidos de ligação
@@ -40,7 +38,7 @@ int network_server_init(short port) {
     struct sockaddr_in server;
     int opt = 1;
 
-    if (tree_skel_init(5) == -1) {  // numero de threads secundarias
+    if (tree_skel_init(5) == -1) {                  // numero de threads secundarias
         return -1;
     }
 
@@ -66,7 +64,7 @@ int network_server_init(short port) {
     }
 
     // Faz listen
-    if (listen(sockfd, 0) < 0) {  // TODO arg N
+    if (listen(sockfd, 0) < 0) {
         perror("Erro ao executar listen");
         close(sockfd);
         return -1;
@@ -90,7 +88,7 @@ int network_main_loop(int listening_socket) {
     signal(SIGINT, close_server);
     printf("Awaiting connection...\n");
     struct pollfd desc_set[NFDESC];
-    int i, nfds, kfds;
+    int i, kfds,nfds;
     for (i = 0; i < NFDESC; i++) {
         desc_set[i].fd = -1;
     }
@@ -100,17 +98,7 @@ int network_main_loop(int listening_socket) {
     nfds = 1;
 
     while ((kfds = poll(desc_set, nfds, 10)) >= 0) {
-
-        /* if(flag == 1){
-            int i;
-            for(i = 1; i < nfds; i++){
-                if(desc_set[i].fd != -1){
-                    close(desc_set[i].fd);
-                }
-            }
-            break;
-        } */
-
+        
         if ((desc_set[0].revents & POLLIN) && (nfds < NFDESC)) {
             if ((desc_set[nfds].fd = accept(desc_set[0].fd, client, size_client)) > 0) {
                 desc_set[nfds].events = POLLIN;
@@ -124,7 +112,7 @@ int network_main_loop(int listening_socket) {
 
                 if ((message = network_receive(desc_set[i].fd)) == NULL) {
                     printf("Connection terminated\n");
-                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada
+                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada pelo cliente?
                     desc_set[i].fd = -1;
                     continue;
                 }
@@ -137,13 +125,22 @@ int network_main_loop(int listening_socket) {
 
                 if (network_send(desc_set[i].fd, message) < 0) {
                     printf("Connection terminated\n");
-                    //close(desc_set[i].fd);                                //a ligacao ja foi fechada
+                    //close(desc_set[i].fd);                               //a ligacao ja foi fechada pelo cliente?
                     desc_set[i].fd = -1;
                     continue;
                 }
             }
         }
     }
+
+    
+    for(i = 1; i < nfds; i++){
+        if(desc_set[i].fd != -1){
+            close(desc_set[i].fd);
+        }
+    }
+        
+    
     free(size_client);
     free(client);
     return 0;
