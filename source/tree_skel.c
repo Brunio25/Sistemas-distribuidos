@@ -77,13 +77,12 @@ int verify(int op_n) {
 /* Função da thread secundária que vai processar pedidos de escrita.
  */
 void *process_request(void *params) {
-
     while (close == 0) {
         pthread_mutex_lock(&queue_lock);
         if (queue_head == NULL) {
             pthread_cond_wait(&queue_not_empty, &queue_lock);
         }
-        if (close != 0){
+        if (close != 0) {
             break;
         }
         struct request_t *request = queue_head;
@@ -102,9 +101,13 @@ void *process_request(void *params) {
         } else {
             queue_head = queue_head->next_request;
         }
+
+        free(request->key);
+        data_destroy(request->data);
+        free(request);
         pthread_mutex_unlock(&queue_lock);
     }
-    pthread_join(pthread_self(),NULL);
+    pthread_join(pthread_self(), NULL);
     return 0;
 }
 
@@ -140,9 +143,10 @@ int invoke(struct _MessageT *msg) {
         for (i = 0; i < maxNumOps; i++) {
             if (operations->in_progress[i] == 0) {
                 operations->in_progress[i] = last_assigned;
+                break;
             }
         }
-        
+
         request = (struct request_t *)malloc(sizeof(struct request_t));
         request->op_n = last_assigned;
         request->op = 0;
@@ -165,7 +169,7 @@ int invoke(struct _MessageT *msg) {
         } else {
             msg->value->datasize = temp->datasize;
             msg->value->data = malloc(msg->value->datasize);
-            strcpy(msg->value->data,(char *)temp->data);
+            strcpy(msg->value->data, (char *)temp->data);
         }
         data_destroy(temp);
 
@@ -179,12 +183,12 @@ int invoke(struct _MessageT *msg) {
                 operations->in_progress[i] = last_assigned;
             }
         }
-        
+
         request = (struct request_t *)malloc(sizeof(struct request_t));
         request->op_n = last_assigned;
         request->op = 1;
         request->key = strdup(msg->entry->key);
-        request->data = data_create2(msg->entry->value->datasize,strdup(msg->entry->value->data));
+        request->data = data_create2(msg->entry->value->datasize, strdup(msg->entry->value->data));
         request->next_request = NULL;
         request->message = msg;
         last_assigned++;
@@ -213,7 +217,7 @@ int invoke(struct _MessageT *msg) {
             msg->values[i]->datasize = values[i]->datasize;
             i++;
         }
-        for(i=0;i < msg->n_values;i++){
+        for (i = 0; i < msg->n_values; i++) {
             free(values[i]);
         }
         free(values);
@@ -241,9 +245,9 @@ int invoke(struct _MessageT *msg) {
 void fill_buffer(struct request_t *request) {
     pthread_mutex_lock(&queue_lock);
 
-    if (queue_head == NULL) {               //Adiciona na cabeca da fila
+    if (queue_head == NULL) {  // Adiciona na cabeca da fila
         queue_head = request;
-    } else {                                //Adiciona no fim da fila
+    } else {  // Adiciona no fim da fila
         struct request_t *aux = queue_head;
 
         while (aux->next_request != NULL) {
@@ -253,31 +257,28 @@ void fill_buffer(struct request_t *request) {
         aux->next_request = request;
     }
 
-    pthread_cond_signal(&queue_not_empty);  //Avisa um bloqueado nessa condicao
+    pthread_cond_signal(&queue_not_empty);  // Avisa um bloqueado nessa condicao
     pthread_mutex_unlock(&queue_lock);
 }
 
 int exec_write_operation(struct request_t *request) {
     pthread_mutex_lock(&tree_lock);
 
-    if (request->op == 1) {                 //Se a operacao = 1 eh put
+    if (request->op == 1) {  // Se a operacao = 1 eh put
         int value = tree_put(tree, request->key, request->data);
-        if (value == -1) {                  //Erro no tree_put
+        if (value == -1) {  // Erro no tree_put
             pthread_mutex_unlock(&tree_lock);
             perror("Tree Put Error.\n");
             return value;
         }
 
-        free(request->key);
-        data_destroy(request->data);
-        free(request);
         pthread_mutex_unlock(&tree_lock);
         return value;
 
-    } else if (request->op == 0) {       //Se a operacao = 0 eh delete
+    } else if (request->op == 0) {  // Se a operacao = 0 eh delete
         int value = tree_del(tree, request->key);
 
-        if (value == -1) {              //Erro no tree_del
+        if (value == -1) {  // Erro no tree_del
             pthread_mutex_unlock(&tree_lock);
             return value;
         }
@@ -288,5 +289,5 @@ int exec_write_operation(struct request_t *request) {
         return value;
     }
 
-    return -1; //Retorna este valor caso a operacao nao seja valida (nem eh put, nem eh delete)
+    return -1;  // Retorna este valor caso a operacao nao seja valida (nem eh put, nem eh delete)
 }
