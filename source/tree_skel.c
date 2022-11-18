@@ -243,9 +243,9 @@ int invoke(struct _MessageT *msg) {
 void fill_buffer(struct request_t *request) {
     pthread_mutex_lock(&queue_lock);
 
-    if (queue_head == NULL) {
+    if (queue_head == NULL) {               //Adiciona na cabeca da fila
         queue_head = request;
-    } else {
+    } else {                                //Adiciona no fim da fila
         struct request_t *aux = queue_head;
 
         while (aux->next_request != NULL) {
@@ -255,16 +255,16 @@ void fill_buffer(struct request_t *request) {
         aux->next_request = request;
     }
 
-    pthread_cond_signal(&queue_not_empty);
+    pthread_cond_signal(&queue_not_empty);  //Avisa um bloqueado nessa condicao
     pthread_mutex_unlock(&queue_lock);
 }
 
 int exec_write_operation(struct request_t *request) {
     pthread_mutex_lock(&tree_lock);
 
-    if (request->op == 1) {
+    if (request->op == 1) {                 //Se a operacao = 1 eh put
         int value = tree_put(tree, request->key, request->data);
-        if (value == -1) {
+        if (value == -1) {                  //Erro no tree_put
             pthread_mutex_unlock(&tree_lock);
             perror("Tree Put Error.\n");
             return value;
@@ -276,10 +276,10 @@ int exec_write_operation(struct request_t *request) {
         pthread_mutex_unlock(&tree_lock);
         return value;
 
-    } else if (request->op == 0) { 
+    } else if (request->op == 0) {       //Se a operacao = 0 eh delete
         int value = tree_del(tree, request->key);
 
-        if (value == -1) { 
+        if (value == -1) {              //Erro no tree_del
             pthread_mutex_unlock(&tree_lock);
             return value;
         }
@@ -290,5 +290,5 @@ int exec_write_operation(struct request_t *request) {
         return value;
     }
 
-    return -1;  // Nao eh esperado que entre aqui, nunca.
+    return -1; //Retorna este valor caso a operacao nao seja valida (nem eh put, nem eh delete)
 }
