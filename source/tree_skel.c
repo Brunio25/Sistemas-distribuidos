@@ -276,7 +276,7 @@ int exec_write_operation(struct request_t *request) {
         pthread_mutex_unlock(&tree_lock);
         return value;
 
-    } else if (request->op == 0) {  // substituir por else?
+    } else if (request->op == 0) { 
         int value = tree_del(tree, request->key);
 
         if (value == -1) { 
