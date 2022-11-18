@@ -188,20 +188,20 @@ int network_send(int client_socket, struct _MessageT *msg) {
     int len_network = htonl(len);
 
     uint8_t *buf = malloc(len);
-    if (buf == NULL) {
+    if (buf == NULL) {                      //Buf nao existe
         perror("malloc error\n");
         return -1;
     }
 
     message_t__pack(msg, buf);
 
-    if ((write_all(client_socket, &len_network, sizeof(int))) < 0) {
+    if ((write_all(client_socket, &len_network, sizeof(int))) < 0) {  //A escrita de um elemento nao foi bem sucedida
         perror("write failed\n");
         free(buf);
         return -1;
     }
 
-    if ((write_all(client_socket, buf, len)) < 0) {
+    if ((write_all(client_socket, buf, len)) < 0) {      //A escrita de varios elementos nao foi bem sucedida
         perror("write failed\n");
         free(buf);
         return -1;
