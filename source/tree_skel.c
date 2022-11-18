@@ -81,7 +81,6 @@ void *process_request(void *params) {
     while (close == 0) {
         pthread_mutex_lock(&queue_lock);
         if (queue_head == NULL) {
-            printf("wait\n");
             pthread_cond_wait(&queue_not_empty, &queue_lock);
         }
         if (close != 0){
@@ -105,7 +104,6 @@ void *process_request(void *params) {
         }
         pthread_mutex_unlock(&queue_lock);
     }
-    printf("juntei1\n");
     pthread_join(pthread_self(),NULL);
     return 0;
 }
