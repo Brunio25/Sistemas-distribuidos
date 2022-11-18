@@ -102,9 +102,6 @@ void *process_request(void *params) {
             queue_head = queue_head->next_request;
         }
 
-        free(request->key);
-        data_destroy(request->data);
-        free(request);
         pthread_mutex_unlock(&queue_lock);
     }
     pthread_join(pthread_self(), NULL);
@@ -271,7 +268,8 @@ int exec_write_operation(struct request_t *request) {
             perror("Tree Put Error.\n");
             return value;
         }
-
+        free(request->key);
+        data_destroy(request->data);
         pthread_mutex_unlock(&tree_lock);
         return value;
 
@@ -282,9 +280,7 @@ int exec_write_operation(struct request_t *request) {
             pthread_mutex_unlock(&tree_lock);
             return value;
         }
-
         free(request->key);
-        free(request);
         pthread_mutex_unlock(&tree_lock);
         return value;
     }

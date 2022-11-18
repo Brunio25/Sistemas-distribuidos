@@ -128,7 +128,6 @@ int network_main_loop(int listening_socket) {
                         desc_set[i].fd = -1;
                         continue;
                     }
-                    //message_t__free_unpacked(message,NULL);
                 }
             }
         }
