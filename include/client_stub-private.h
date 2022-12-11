@@ -21,7 +21,7 @@ struct rtree_t {
     zhandle_t *zh;
     int is_connected;
 
-    char *identifier ; // identificador do servidor
+    char *identifier; // identificador do servidor
     char *identifier_other; //identificador do outro servidor
 };
 

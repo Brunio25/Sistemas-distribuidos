@@ -90,11 +90,6 @@ int main(int argc, char const *argv[]) {
 
     struct rtree_t *rtree = rtree_connect(argv[1]);
 
-    if (rtree == NULL) {
-        printf("erro na ligacao ao servidor\n");
-        return -1;
-    }
-
     usage();
     while (1) {
         fgets(input, 100, stdin);

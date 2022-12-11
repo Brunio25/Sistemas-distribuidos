@@ -58,6 +58,7 @@ int tree_skel_init(char* host_port) {
     children_list = (zoo_string *) malloc(sizeof(zoo_string));
     info_system = (struct rtree_t *) malloc (sizeof(struct rtree_t *));
 
+    info_system->socket_used = 0;
     operations->in_progress = calloc(maxNumOps, sizeof(int));
     operations->max_proc = 0;
     queue_head = NULL;
@@ -272,6 +273,7 @@ void fill_buffer(struct request_t *request) {
 }
 
 int exec_write_operation(struct request_t *request) {
+    sleep(4);
     pthread_mutex_lock(&tree_lock);
 
     if (request->op == 1) {  // Se a operacao = 1 eh put
@@ -303,6 +305,7 @@ int exec_write_operation(struct request_t *request) {
             msg->entry->value->data = strdup(request->data->data);
             msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
             msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
+            
             network_send(info_system->socket_used, msg);
         }
         return value;
@@ -348,63 +351,55 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
             char *next = malloc(ZDATALEN);
             strcpy(next, "0");
             printf("A reconetar ao próximo servidor...\n");
-         
-            for (int i = 0; i < children_list->count; i++)  {
+        
+            for (int i = 0; i < children_list->count; i++) {
                 
                 if(strcmp(next, "0")==0 && strcmp(children_list->data[i], info_system->identifier)>0){
                     strcpy(next, children_list->data[i]);
                 }
-                if(strcmp(children_list->data[i], info_system->identifier)>0 && strcmp(children_list->data[i], next)<0)
+                if(strcmp(children_list->data[i], info_system->identifier)>0 && strcmp(children_list->data[i], next)<0){
                     strcpy(next, children_list->data[i]);
+                }
             }
 
             sleep(3);
             
-            if(strcmp(next, "0")!=0){
-              
-                info_system->identifier_other= strdup(next);
-                
-                int data_size = 50;
-                char *data = malloc(data_size);
-                char dataPath[120];
-                strcpy(dataPath, zoo_root);
-                strcat(dataPath, "/");
-                strcat(dataPath, next);
-                zoo_get(info_system->zh, dataPath, 0, data, &data_size, NULL);
-                char *host = strtok((char *)IPbuffer, ":");
-                int port = atoi(strtok(NULL, ":"));
-                info_system->socket.sin_family = AF_INET;
-                info_system->socket.sin_port = htons(port);
-                if (inet_pton(AF_INET, host, &info_system->socket.sin_addr) < 1) {
-                    printf("Erro ao converter IP\n");
-                    return;
-                }
-                //Criar socket TCP
-                if((info_system->socket_used = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-                    perror("Erro ao criar socket TCP - Cliente");
-                    exit(1);
-                }
-                //printf("SOCKET NUMBER: %d\n\n\n", server->socket_num);
-                
-                //Estabelece conexao com o servidor
-                if(connect(info_system->socket_used,(struct sockaddr *)&info_system->socket, sizeof(info_system->socket)) < 0){
-                    perror("Erro ao conetar ao servidor - Client");
-                    close(info_system->socket_used);
-                    exit(1);
-                }
-
-                // signal(SIGPIPE, conn_lost);
-
-                printf("Conetado ao próximo servidor\n");
-
-                free(data);  
-                free(next);
+            info_system->identifier_other= strdup(next);
+            
+            int data_size = 50;
+            char *data = malloc(data_size);
+            char dataPath[120];
+            strcpy(dataPath, zoo_root);
+            strcat(dataPath, "/");
+            strcat(dataPath, next);
+            zoo_get(info_system->zh, dataPath, 0, data, &data_size, NULL);
+            char *host = strtok((char *)strdup(IPbuffer), ":");
+            int port = atoi(strtok(NULL, "\n"));
+            info_system->socket.sin_family = AF_INET;
+            info_system->socket.sin_port = htons(port);
+            if (inet_pton(AF_INET, host, &info_system->socket.sin_addr) < 1) {
+                printf("Erro ao converter IP\n");
+                return;
             }
-        free(children_list);
+            //Criar socket TCP
+            if((info_system->socket_used = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+                perror("Erro ao criar socket TCP - Cliente");
+                exit(1);
+            }
+            //Estabelece conexao com o servidor
+            if(connect(info_system->socket_used,(struct sockaddr *)&info_system->socket, sizeof(info_system->socket)) < 0){
+                perror("Erro ao conetar ao servidor - Client");
+                close(info_system->socket_used);
+                exit(1);
+            }
+            printf("Conetado ao próximo servidor\n");
+            free(data);  
+            free(next);
+            
+            free(children_list);
         }
     }
 }
-                        
 
 
 void watcher_func(zhandle_t *zzh, int type, int state, const char *path, void* context){
@@ -418,6 +413,7 @@ void watcher_func(zhandle_t *zzh, int type, int state, const char *path, void* c
 }
 
 int start_zookeeper(char *zookeeper_addr, char * serverPort){
+    info_system->identifier_other = strdup("none");
     info_system->zh = zookeeper_init(zookeeper_addr, watcher_func, 2000, 0, 0, 0);
     if (info_system->zh == NULL) {
         fprintf(stderr, "Error connecting to ZooKeeper server\n");
@@ -454,7 +450,7 @@ int start_zookeeper(char *zookeeper_addr, char * serverPort){
         int new_path_len = 1024;
         char* new_path = malloc (new_path_len);
 
-        if (ZOK != zoo_create(info_system->zh, node_path, IPbuffer, strlen(IPbuffer), &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE | ZOO_EPHEMERAL , new_path, new_path_len)) {
+        if (ZOK != zoo_create(info_system->zh, node_path, IPbuffer, strlen(IPbuffer), &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE, new_path, new_path_len)) {
             fprintf(stderr, "Error creating znode from path %s!\n", node_path);
             exit(EXIT_FAILURE);
         }
