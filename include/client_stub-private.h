@@ -11,9 +11,19 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include <zookeeper/zookeeper.h>
+#include "tree_skel-private.h"
+
 struct rtree_t {
-    int sockfd;
-    struct sockaddr_in server;
+    struct sockaddr_in socket; // endereço do outro servidor
+    int socket_used;
+    
+    zhandle_t *zh;
+    int is_connected;
+
+    char *identifier ; // identificador do servidor
+    char *identifier_other; //identificador do outro servidor
 };
 
+int connectServer(struct rtree_t *server, char *serverInfo);
 #endif

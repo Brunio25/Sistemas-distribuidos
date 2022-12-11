@@ -6,27 +6,21 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "network_server.h"
 
 int main(int argc, char const *argv[]) {
     if (argc != 3) {
-        printf("Usage: ./server <server_port> <N>\n");
+        printf("Usage: ./binary/tree-server <serverPort> <IP>:<port>\n");
         return -1;
-    }
-
-    for (int i = 0; argv[1][i] != '\0'; i++) {
-        if (!isdigit(argv[1][i])) {
-            printf("Invalid Usage.");
-            printf("Usage:\n \t./tree-server <server_port>\n");
-            return -1;
-        }
     }
     
     int sockfd = network_server_init(atoi(argv[1]));
-    if (tree_skel_init(atoi(argv[2])) == -1) {                  // numero de threads secundarias
+    if (tree_skel_init(strdup(argv[1])) == -1) {
         return -1;
     } 
+    network_zookeeper_init(strdup(argv[2]),strdup(argv[1]));
     network_main_loop(sockfd);
     network_server_close();
 

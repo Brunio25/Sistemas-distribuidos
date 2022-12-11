@@ -6,6 +6,12 @@
 #ifndef _TREE_SKEL_PRIVATE_H
 #define _TREE_SKEL_PRIVATE_H
 
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <zookeeper/zookeeper.h>
+
 struct op_proc {
     int max_proc;
     int *in_progress;
@@ -23,5 +29,9 @@ struct request_t {
 int exec_write_operation(struct request_t *request);
 
 void fill_buffer(struct request_t *request);
+
+int start_zookeeper(char *zookeeper_addr, char * port);
+
+void watcher_func(zhandle_t *zzh, int type, int state, const char *path, void* context);
 
 #endif

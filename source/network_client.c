@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <zookeeper/zookeeper.h>
 
 #include "client_stub-private.h"
 #include "message-private.h"
@@ -28,19 +29,19 @@
  */
 int network_connect(struct rtree_t *rtree) {
     // Cria socket TCP
-    if ((rtree->sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((rtree->socket_used = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Erro ao criar socket TCP");
         return -1;
     }
 
     // Preenche estrutura server com endereço do servidor para estabelecer
     // conexão
-    rtree->server.sin_family = AF_INET;  // família de endereços
+    rtree->socket.sin_family = AF_INET;  // família de endereços
 
     // Estabelece conexão com o servidor definido na estrutura server
-    if (connect(rtree->sockfd, (struct sockaddr *)&rtree->server, sizeof(rtree->server)) < 0) {
+    if (connect(rtree->socket_used, (struct sockaddr *)&rtree->socket, sizeof(rtree->socket)) < 0) {
         perror("Erro ao conectar-se ao servidor");
-        close(rtree->sockfd);
+        close(rtree->socket_used);
         return -1;
     }
 
@@ -56,7 +57,7 @@ int network_connect(struct rtree_t *rtree) {
  * - Retornar a mensagem de-serializada ou NULL em caso de erro.
  */
 struct _MessageT *network_send_receive(struct rtree_t *rtree, struct _MessageT *msg) {
-    int sockfd = rtree->sockfd;
+    int sockfd = rtree->socket_used;
     signal(SIGPIPE, SIG_IGN);
     int len = message_t__get_packed_size(msg);
     uint8_t *sendBuf = malloc(len);
@@ -90,6 +91,6 @@ struct _MessageT *network_send_receive(struct rtree_t *rtree, struct _MessageT *
  * network_connect().
  */
 int network_close(struct rtree_t *rtree) {
-    close(rtree->sockfd);
+    close(rtree->socket_used);
     return 0;
 }

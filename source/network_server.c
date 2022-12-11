@@ -6,6 +6,7 @@
 #define NFDESC 10
 
 #include "network_server.h"
+#include "tree_skel-private.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -216,4 +217,16 @@ int network_send(int client_socket, struct _MessageT *msg) {
 int network_server_close() {
     tree_skel_destroy();
     return 0;
+}
+
+int network_zookeeper_init(char *zookeeper_addr, char * port){
+
+    int value_zoo = start_zookeeper(zookeeper_addr, port);
+
+    if(value_zoo == -1){
+        return -1;
+    }
+
+    return 0;
+
 }

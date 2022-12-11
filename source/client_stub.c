@@ -10,48 +10,181 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <zookeeper/zookeeper.h>
 
 #include "client_stub-private.h"
 #include "entry.h"
 #include "network_client.h"
+#include "tree_skel-private.h"
 
 /* Função para estabelecer uma associação entre o cliente e o servidor,
  * em que address_port é uma string no formato <hostname>:<port>.
  * Retorna NULL em caso de erro.
  */
-struct rtree_t *rtree_connect(const char *address_port) {
-    if (address_port == NULL) {
-        perror("Invalid Port\n");
-        return NULL;
-    }
 
-    struct rtree_t *rtree = malloc(sizeof(struct rtree_t));
-    char *localAddress_port = strdup(address_port);
-    char *token1 = strtok(localAddress_port, ":");
-    char *token2 = strtok(NULL, ":");
+#define ZDATALEN 1024 
+struct rtree_t *head;
+struct rtree_t *tail;
+static char *root_path = "/chain";
+typedef struct String_vector zoo_string;
+zoo_string *children_list;
+static char *watcher_ctx = "ZooKeeper Data Watcher";
 
-    for (int i = 0; token2[i] != '\0'; i++) {
-        if (!isdigit(token2[i])) {
-            printf("Usage: ./tree-client <server_IP:server_port>\n");
-            free(rtree);
-            return NULL;
+struct rtree_t *conn;
+
+void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, void *context){
+    if (type == ZOO_SESSION_EVENT){
+        if (state == ZOO_CONNECTED_STATE){
+            conn->is_connected = 1;
+        }
+        else{
+            conn->is_connected = 0;
         }
     }
+}
 
-    rtree->server.sin_port = htons(atoi(token2));  // Porta TCP
+static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
+    //filhos tiveram update entao precisamos ver novos head/tail e ligar a esses
+    int data_len = 60;
+    children_list = (zoo_string *)malloc(sizeof(zoo_string));
+    char headPath[125];
+    char tailPath[125];
+    char *headInfo = malloc(data_len);
+    char *tailInfo = malloc(data_len);
+    if (state == ZOO_CONNECTED_STATE){
+        if (type == ZOO_CHILD_EVENT){
+            /* Get the updated children and reset the watch */
+            if (ZOK != zoo_wget_children(conn->zh, root_path, child_watcher, watcher_ctx, children_list)){
+                fprintf(stderr, "Error setting watch at %s!\n", root_path);
+            }
+            //conseguir nome do menor node e maior node
+            printf("Ao reconetar aos servidores...\n");
+            for (int i = 0; i < children_list->count; i++){
+                head->identifier = children_list->data[0];
+                tail->identifier = children_list->data[0];
+                for (int i = 0; i < children_list->count; i++){
+                    if (strcmp(children_list->data[i], head->identifier) < 0)
+                        head->identifier = children_list->data[i];
+                    if (strcmp(children_list->data[i], tail->identifier) > 0)
+                        tail->identifier = children_list->data[i];
+                }
+            }
+           
+            sleep(7);//tempo aos nodes reorganizarem
 
-    if (inet_pton(AF_INET, token1, &rtree->server.sin_addr) < 1) {  // Endereço IP
+            //conseguir path do maior e menor node
+            strcpy(headPath, root_path);
+            strcat(headPath, "/");
+            strcat(headPath, head->identifier);
+            strcpy(tailPath, root_path);
+            strcat(tailPath, "/");
+            strcat(tailPath, tail->identifier);
+            //conseguir data do maior e menor node e guardar em head e tail
+            zoo_get(conn->zh, headPath, 0, headInfo, &data_len, NULL);
+            zoo_get(conn->zh, tailPath, 0, tailInfo, &data_len, NULL);
+            //conetar a esses servidores para enviar/receber pedidos
+            if(connectServer(head, headInfo) == -1){
+                printf("Erro ao conetar a Head");
+                exit(1);
+            }
+            if(connectServer(tail, tailInfo) == -1){
+                printf("Erro ao conetar a Tail");
+                exit(1);
+            }
+        }
+    }
+    free(children_list);
+    free(headInfo);
+    free(tailInfo);
+}
+
+int connectServer(struct rtree_t *server, char *serverInfo){
+    char *host = strtok((char *)serverInfo, ":");
+    int port = atoi(strtok(NULL, ":")); 
+
+    server->socket.sin_family = AF_INET;
+    server->socket.sin_port = htons(port);
+
+    if (inet_pton(AF_INET, host, &server->socket.sin_addr) < 1) {
         printf("Erro ao converter IP\n");
-        free(rtree);
+        return -1;
+    }
+    if (network_connect(server) == -1) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+struct rtree_t *rtree_connect(const char *address_port) {
+    conn = (struct rtree_t *)malloc(sizeof(struct rtree_t));
+    head = (struct rtree_t *)malloc(sizeof(struct rtree_t));
+    tail = (struct rtree_t *)malloc(sizeof(struct rtree_t));
+    children_list = (zoo_string *)malloc(sizeof(zoo_string));
+
+    conn->zh = zookeeper_init(address_port, connection_watcher, 20000, 0, NULL, 0);
+    if (conn->zh == NULL){
+        fprintf(stderr, "Error connecting to ZooKeeper server[%d]!\n", errno);
+        exit(EXIT_FAILURE);
+    }
+    sleep(4); //dorme para conectar
+
+    int data_len = 50;
+    char headPath[120];
+    char tailPath[120];
+    char *headInfo = malloc(data_len);
+    char *tailInfo = malloc(data_len);
+
+    if (conn->is_connected){
+        // Possibilidade de usar um watch do /chain se nao existir (no valor 0)
+        if (ZNONODE == zoo_exists(conn->zh, root_path, 0, NULL)){
+            printf("Error: %s doesnt exist!!", root_path);
+        }
+        
+        if (ZOK != zoo_wget_children(conn->zh, root_path, &child_watcher, watcher_ctx, children_list)){
+            fprintf(stderr, "Error setting watch at %s!\n", root_path);
+        }
+
+        //conseguir nome do menor node e maior node(ex: node0000001)
+        //fprintf(stderr, "\n=== znode Head and Tail set === [ %s ]", root_path);
+        head->identifier = children_list->data[0];
+        tail->identifier = children_list->data[0];
+        for (int i = 0; i < children_list->count; i++){
+            if (strcmp(children_list->data[i], head->identifier) < 0)
+                head->identifier = children_list->data[i];
+            if (strcmp(children_list->data[i], tail->identifier) > 0)
+                tail->identifier = children_list->data[i];
+        }
+        //fprintf(stderr, "\n=== done ===\n");
+        //conseguir path do maior e menor node (ex: /chain/node000001)
+        strcpy(headPath, root_path);
+        strcat(headPath, "/");
+        strcat(headPath, head->identifier);
+
+        strcpy(tailPath, root_path);
+        strcat(tailPath, "/");
+        strcat(tailPath, tail->identifier);
+        //conseguir data do maior e menor node("IP:Port") e guardar em headInfo e tailInfo
+        zoo_get(conn->zh, headPath, 0, headInfo, &data_len, NULL);
+        zoo_get(conn->zh, tailPath, 0, tailInfo, &data_len, NULL);
+    }
+    //conetar a esses servidores para enviar/receber pedidos
+    if(connectServer(head, headInfo) == -1){
+        printf("Erro ao conetar a Head");
+        return NULL;
+    }
+    if(connectServer(tail, tailInfo) == -1){
+        printf("Erro ao conetar a Tail");
         return NULL;
     }
 
-    if (network_connect(rtree) == -1) {
-        free(rtree);
-        return NULL;
-    }
-    free(localAddress_port);
-    return rtree;
+    free(children_list);
+    free(headInfo);
+    free(tailInfo);
+
+    return NULL;
 }
 
 /* Termina a associação entre o cliente e o servidor, fechando a
@@ -59,8 +192,15 @@ struct rtree_t *rtree_connect(const char *address_port) {
  * Retorna 0 se tudo correr bem e -1 em caso de erro.
  */
 int rtree_disconnect(struct rtree_t *rtree) {
-    network_close(rtree);
-    free(rtree);
+   if (network_close(head) != 0)
+        return -1;
+    if (network_close(tail) != 0)
+        return -1;
+        
+    free(head);
+    free(tail);
+    zookeeper_close(conn->zh);
+    free(conn);
     return 0;
 }
 
@@ -93,7 +233,7 @@ int rtree_put(struct rtree_t *rtree, struct entry_t *entry) {
     free(entry->value);
     free(entry);
 
-    struct _MessageT *msgRec = network_send_receive(rtree, msg);
+    struct _MessageT *msgRec = network_send_receive(head, msg);
 
     if (msgRec->opcode == MESSAGE_T__OPCODE__OP_PUT + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
         int waitNum = msgRec->result;
@@ -117,7 +257,7 @@ struct data_t *rtree_get(struct rtree_t *rtree, char *key) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
     msg.key = key;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         struct data_t *data = data_create(msgRec->value->datasize + 1);
@@ -147,7 +287,7 @@ int rtree_del(struct rtree_t *rtree, char *key) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_KEY;
     msg.key = key;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(head, &msg);
 
     if (msgRec->opcode == MESSAGE_T__OPCODE__OP_DEL + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
         int waitNum = msgRec->result;
@@ -167,7 +307,7 @@ int rtree_size(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_SIZE;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         int val = msgRec->result;
@@ -187,7 +327,7 @@ int rtree_height(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_HEIGHT;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR) {
         int val = msgRec->result;
@@ -208,7 +348,7 @@ char **rtree_get_keys(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
 
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR && msgRec->keys != NULL) {
         char **keys = malloc(sizeof(msgRec->keys) + 1);
@@ -237,7 +377,7 @@ void **rtree_get_values(struct rtree_t *rtree) {
     msg.opcode = MESSAGE_T__OPCODE__OP_GETVALUES;
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
     void **values = malloc(sizeof(msgRec->values) + 1);
     if (msgRec->opcode != MESSAGE_T__OPCODE__OP_ERROR && msgRec->values != NULL) {
         int i = 0;
@@ -264,7 +404,7 @@ int rtree_verify(struct rtree_t *rtree, int op_n) {
     msg.c_type = MESSAGE_T__C_TYPE__CT_RESULT;
     msg.result = op_n;
 
-    struct _MessageT *msgRec = network_send_receive(rtree, &msg);
+    struct _MessageT *msgRec = network_send_receive(tail, &msg);
 
     if (msgRec->opcode == MESSAGE_T__OPCODE__OP_VERIFY + 1 && msgRec->c_type == MESSAGE_T__C_TYPE__CT_RESULT) {
         int result = msgRec->result;

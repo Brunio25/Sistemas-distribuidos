@@ -23,11 +23,11 @@ tree-client = tree_client.o data.o entry.o client_stub.o network_client.o messag
 
 objects = tree_server.o data.o entry.o tree.o network_server.o message.o sdmessage.pb-c.o tree_skel.o tree_client.o network_client.o client_stub.o
 
-client-lib = client_stub.o network_client.o data.o entry.o
+client-lib = client_stub.o network_client.o data.o entry.o message.o sdmessage.pb-c.o
 
 CFLAGS = -g -Wall -I
 
-LIBS= -lpthread
+LIBS= -lpthread -lzookeeper_mt
 
 all: client-lib.o tree-client tree-server
 
@@ -37,10 +37,10 @@ all: client-lib.o tree-client tree-server
 tree.o: $(OBJ_DIR)/tree.o
 
 client-lib.o: $(client-lib)
-			ld -r $(addprefix $(OBJ_DIR)/,$^) -o $(LIB_DIR)/$@
+	ld -r $(addprefix $(OBJ_DIR)/,$^) -o $(LIB_DIR)/$@
 
 tree-client: $(tree-client)
-	$(CC)  $(addprefix $(OBJ_DIR)/,$^) -o $(BIN_DIR)/$@ $(LDFLAGS)
+	$(CC)  $(addprefix $(OBJ_DIR)/,$^) $(LIBS) -o $(BIN_DIR)/$@ $(LDFLAGS)
 
 tree-server: $(tree-server)
 	$(CC) $(addprefix $(OBJ_DIR)/,$^) $(LIBS) -o $(BIN_DIR)/$@ $(LDFLAGS)
